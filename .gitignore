@@ -1,0 +1,6 @@
+build/
+*.egg-info/
+.ipynb_checkpoints/
+*.c
+*.so
+*.html
