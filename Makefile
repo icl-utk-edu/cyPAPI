@@ -1,4 +1,4 @@
-build: setup.py papi/cypapi.pyx papi/papih.pxd
+build: setup.py cypapi/cypapi.pyx cypapi/papih.pxd
 	python setup.py build_ext --inplace
 
 install:
@@ -6,7 +6,7 @@ install:
 
 clean:
 	rm -rf *.so build/ *.egg-info/
-	make -C papi clean
+	make -C cypapi clean
 
 docs:
 	sphinx-build -M html docs/source/ docs/build/
