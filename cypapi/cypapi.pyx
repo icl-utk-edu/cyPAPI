@@ -329,8 +329,8 @@ cdef class CyPAPI_EventSet:
         PyMem_Free(vals)
 
     def list_events(self, probe = False):
-        cdef int num_events = self.num_events()
-        cdef int *evts, papi_errno
+        #cdef int num_events = self.num_events()
+        cdef int *evts, papi_errno, num_events = self.num_events()
         # does not probe EventSet
         if not probe:
             evts = <int *> PyMem_Malloc(num_events * sizeof(int))
