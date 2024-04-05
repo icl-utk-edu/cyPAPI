@@ -328,17 +328,24 @@ cdef class CyPAPI_EventSet:
             values[i] = vals[i]
         PyMem_Free(vals)
 
-    def list_events(self):
+    def list_events(self, probe = False):
         cdef int num_events = self.num_events()
-        cdef int *evts = <int *> PyMem_Malloc(num_events * sizeof(int))
-        if not evts:
-            raise Exception('Failed to allocate array')
-        cdef int number = 0
-        cdef int papi_errno = PAPI_list_events(self.event_set, evts, &number)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_list_events failed.')
-        result = [evts[i] for i in range(num_events)]
-        PyMem_Free(evts)
+        cdef int *evts, papi_errno
+        # does not probe EventSet
+        if not probe:
+            evts = <int *> PyMem_Malloc(num_events * sizeof(int))
+            if not evts:
+                raise Exception('Failed to allocate array')
+
+            papi_errno = PAPI_list_events( self.event_set, evts, &num_events  )
+            if papi_errno != PAPI_OK:
+                raise Exception(f'PAPI Error {papi_errno}: PAPI_list_events failed.')
+
+            result = [evts[i] for i in range(num_events)]
+            PyMem_Free(evts)
+        # probe EventSet
+        else:
+            result = num_events
         return result
 
     def state(self):
