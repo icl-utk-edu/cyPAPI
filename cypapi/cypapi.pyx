@@ -20,55 +20,55 @@ PAPI_Error = {
     'PAPI_EDELAYINIT': PAPI_EDELAY_INIT
 }
 
-def pyPAPI_library_init():
+def cyPAPI_library_init():
     cdef int papi_errno = PAPI_library_init(PAPI_VER_CURRENT)
     if papi_errno != PAPI_VER_CURRENT:
         raise Exception('PAPI Error: Failed to initialize PAPI_Library')
 
-def pyPAPI_get_version_string():
+def cyPAPI_get_version_string():
     ver = f'{PAPI_VERSION_MAJOR(PAPI_VERSION)}.{PAPI_VERSION_MINOR(PAPI_VERSION)}.{PAPI_VERSION_REVISION(PAPI_VERSION)}.{PAPI_VERSION_INCREMENT(PAPI_VERSION)}'
     return ver
 
-def pyPAPI_is_initialized():
+def cyPAPI_is_initialized():
     return PAPI_is_initialized()
 
 @atexit.register
-def pyPAPI_shutdown():
+def cyPAPI_shutdown():
     PAPI_shutdown()
 
-def pyPAPI_strerror(int papi_errno):
+def cyPAPI_strerror(int papi_errno):
     cdef char* c_str = PAPI_strerror(papi_errno)
     return str(c_str, encoding='utf-8')
 
-def pyPAPI_num_components():
+def cyPAPI_num_components():
     return PAPI_num_components()
 
-def pyPAPI_get_component_index(str name):
+def cyPAPI_get_component_index(str name):
     return PAPI_get_component_index(name.encode('utf-8'))
 
-def pyPAPI_get_real_cyc():
+def cyPAPI_get_real_cyc():
     return PAPI_get_real_cyc()
 
-def pyPAPI_get_real_nsec():
+def cyPAPI_get_real_nsec():
     return PAPI_get_real_nsec()
 
-def pyPAPI_get_real_usec():
+def cyPAPI_get_real_usec():
     return PAPI_get_real_usec()
 
-def pyPAPI_get_virt_cyc():
+def cyPAPI_get_virt_cyc():
     return PAPI_get_virt_cyc()
 
-def pyPAPI_get_virt_nsec():
+def cyPAPI_get_virt_nsec():
     return PAPI_get_virt_nsec()
 
-def pyPAPI_get_virt_usec():
+def cyPAPI_get_virt_usec():
     return PAPI_get_virt_usec()
 
-def pyPAPI_get_cyc_per_usec() -> int:
+def cyPAPI_get_cyc_per_usec() -> int:
     """Returns the CPU clock speed in cycles per micro sec (same as MHz)."""
     return PAPI_get_opt(PAPI_CLOCKRATE, NULL)
 
-class PyPAPI_get_component_info:
+class CyPAPI_get_component_info:
 
     def __init__(self, int cidx):
         cdef const PAPI_component_info_t* cmp_info = PAPI_get_component_info(cidx)
@@ -98,7 +98,7 @@ class PyPAPI_get_component_info:
     def __str__(self):
         return str(self.__dict__)
 
-cdef class PyPAPI_enum_preset_events:
+cdef class CyPAPI_enum_preset_events:
     cdef int ntv_code
     cdef int modifier
     cdef int umod
@@ -164,7 +164,7 @@ cdef void _PAPI_enum_cmp_event(int *EventCode, int modifier, int cidx) except *:
     if papi_errno == PAPI_ENOEVNT or papi_errno == PAPI_EINVAL:
         raise StopIteration
 
-cdef class PyPAPI_enum_component_events:
+cdef class CyPAPI_enum_component_events:
     cdef int ntv_code
     cdef int cidx
     cdef int modifier
@@ -188,10 +188,10 @@ cdef class PyPAPI_enum_component_events:
     def __next__(self):
         return self.next_event()
 
-def pyPAPI_num_cmp_hwctrs(int cidx):
+def cyPAPI_num_cmp_hwctrs(int cidx):
     return PAPI_num_cmp_hwctrs(cidx)
 
-def pyPAPI_event_code_to_name(int event_code):
+def cyPAPI_event_code_to_name(int event_code):
     cdef char out[1024]
     cdef int papi_errno = PAPI_event_code_to_name(event_code, out)
     if papi_errno == PAPI_ENOMEM:
@@ -201,7 +201,7 @@ def pyPAPI_event_code_to_name(int event_code):
     event_name = str(out, encoding='utf-8')
     return event_name
 
-def pyPAPI_event_name_to_code(str eventname):
+def cyPAPI_event_name_to_code(str eventname):
     cdef bytes c_name = eventname.encode('utf-8')
     cdef int out = -1
     cdef papi_errno = PAPI_event_name_to_code(c_name, &out)
@@ -209,7 +209,7 @@ def pyPAPI_event_name_to_code(str eventname):
         raise Exception(f'PAPI Error {papi_errno}: Failed to get event code')
     return out
 
-def pyPAPI_event_code_to_descr(int event_code):
+def cyPAPI_event_code_to_descr(int event_code):
     cdef PAPI_event_info_t info;
     cdef int papi_errno;
     papi_errno = PAPI_get_event_info(event_code, &info)
@@ -217,7 +217,7 @@ def pyPAPI_event_code_to_descr(int event_code):
         raise Exception(f'PAPI Error {papi_errno}: Failed to get event info')
     return str(info.short_descr, encoding='utf-8')
 
-cdef class PyPAPI_EventSet:
+cdef class CyPAPI_EventSet:
     cdef int event_set
 
     def __cinit__(self):

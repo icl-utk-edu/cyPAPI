@@ -22,7 +22,7 @@ cdef unsigned long get_thread_id() noexcept nogil:
     with gil:
         return threading.get_native_id()
 
-def pyPAPI_thread_init():
+def cyPAPI_thread_init():
     cdef int papi_errno = PAPI_thread_init(get_thread_id)
     if papi_errno != PAPI_OK:
         raise Exception('PAPI Error: PAPI_thread_init failed')
