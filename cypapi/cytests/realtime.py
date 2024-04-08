@@ -29,7 +29,7 @@ try:
     rt_ms_stop = cyPAPI_get_real_usec()
 # handle error
 except:
-    perrno = PAPI_Error["EINVAL"]
+    perrno = PAPI_Error["PAPI_EINVAL"]
 
 # output if real time cyPAPI functions succeeded
 if perrno == PAPI_Error["PAPI_OK"]:
