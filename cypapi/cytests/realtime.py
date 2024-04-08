@@ -13,6 +13,7 @@ cyPAPI_library_init()
 if cyPAPI_is_initialized() != 1:
     raise ValueError("cyPAPI has not been initialized.\n")
 
+# test real time cyPAPI functions
 try: 
     # real time in clock cycles
     rt_cc_start = cyPAPI_get_real_cyc()
@@ -26,13 +27,16 @@ try:
     rt_ms_start = cyPAPI_get_real_usec()
     do_flops()
     rt_ms_stop = cyPAPI_get_real_usec()
+# handle error
 except:
     perrno = PAPI_Error["EINVAL"]
 
+# output if real time cyPAPI functions succeeded
 if perrno == PAPI_Error["PAPI_OK"]:
     print("Real time in clock cycles: ", rt_cc_stop - rt_cc_start)
     print("Real time in nanoseconds: ", rt_ns_stop - rt_ns_start)
     print("Real time in microseconds: ", rt_ms_stop - rt_ms_start)
     print("\033[0;32mPASSED\033[0m");
+# output if real time cyPAPI functions failed
 else:
     print("\033[0;31mFAILED\033[0m");
