@@ -10,7 +10,7 @@ The Performance Application Programming Interface (PAPI) supplies a consistent i
 
 To use cyPAPI: <br>
 
-Clone the cyPAPI respoitory with the following command:
+Clone the cyPAPI repository with the following command:
 
 ```bash
 git clone https://github.com/icl-utk-edu/cyPAPI.git
