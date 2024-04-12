@@ -26,13 +26,13 @@ make install
 ```
 ## Installation Requirements
 - PAPI library
-    -  cyPAPI takes advantage of existing PAPI functionality such as timers, event sets, software defined events. If PAPI is not installed see the following [link](https://github.com/icl-utk-edu/papi/wiki/Downloading-and-Installing-PAPI)
+    -  cyPAPI takes advantage of existing PAPI functionality such as timers, eventsets, and software defined events. If PAPI is not installed see the following [link](https://github.com/icl-utk-edu/papi/wiki/Downloading-and-Installing-PAPI).
 
     Note: cyPAPI will check the following locations for PAPI:
-    - First checks if user has set `PAPI_PATH` environment variable pointing to the location of PAPI installation
-    - Then it checks if pkg-config utility can locate PAPI installation
-    - Then it relies on `C_INCLUDE_PATHS` & `LIBRARY_PATHS` to be used by compiler
-    - It also looks for papi library in `LD_LIBRARY_PATH`
+    - First checks if the user has set the `PAPI_PATH` environment variable which points to the location of your PAPI installation
+    - Then it checks if pkg-config utility can locate the PAPI installation
+    - Then it relies on `C_INCLUDE_PATHS` & `LIBRARY_PATHS` to be used by the compiler
+    - It also looks for the PAPI library in `LD_LIBRARY_PATH`
     - Lastly it expects that PAPI is installed in default OS installation paths
 
 - Cython
