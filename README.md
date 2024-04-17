@@ -25,14 +25,22 @@ cd cyPAPI
 make install
 ```
 ## Installation Requirements
+- PAPI library
+    -  cyPAPI takes advantage of existing PAPI functionality such as timers, eventsets, and software defined events. If PAPI is not installed see the following [link](https://github.com/icl-utk-edu/papi/wiki/Downloading-and-Installing-PAPI).
+
+    Note: cyPAPI will check the following locations for PAPI:
+    - First checks if the user has set the `PAPI_PATH` environment variable which points to the location of your PAPI installation
+    - Then it checks if pkg-config utility can locate the PAPI installation
+    - Then it relies on `C_INCLUDE_PATHS` & `LIBRARY_PATHS` to be used by the compiler
+    - It also looks for the PAPI library in `LD_LIBRARY_PATH`
+    - Lastly it expects that PAPI is installed in default OS installation paths
 
 - Cython
-- Numpy
+    - Allows access to PAPI profiling features by the support of calling C functions and gives the ease of Python with the speed of native code.
+
 - C compiler, e.g. gcc
-- PAPI library installed, if not installed see the following [link](https://github.com/icl-utk-edu/papi/wiki/Downloading-and-Installing-PAPI)
-    - First checks if user has set `PAPI_PATH` environment variable pointing to the location of PAPI installation
-    - Then it checks if pkg-config utility can locate PAPI installation
-    - Then it relies on `C_INCLUDE_PATHS` & `LIBRARY_PATHS` to be used by compiler
-    - It also looks for papi library in `LD_LIBRARY_PATH`
-    - Lastly it expects that PAPI is installed in default OS installation paths
+    - Cython requires a C compiler to be present on the system such that `.pyx` files can be compiled into C/C++ files respectively. Afterwards the C/C++ files will then be compiled into an extension module which is then directly importable from Python.
+
+- Numpy
+    - Internal functions utilize `numpy.ndarrays`. Due to this the Numpy library is a requirement such that installation will be successful. 
 
