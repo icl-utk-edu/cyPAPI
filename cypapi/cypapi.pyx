@@ -191,9 +191,11 @@ cdef class CyPAPI_enum_component_events:
 def cyPAPI_num_cmp_hwctrs(int cidx):
     return PAPI_num_cmp_hwctrs(cidx)
 
-def cyPAPI_event_code_to_name(int event_code):
+def cyPAPI_event_code_to_name(event_code):
+    # convert Python integer to Numpy value, which follows C overflow logic
+    cdef int papi_errno, evt_code = np.array(event_code).astype(np.intc)
     cdef char out[1024]
-    cdef int papi_errno = PAPI_event_code_to_name(event_code, out)
+    papi_errno = PAPI_event_code_to_name(evt_code, out)
     if papi_errno == PAPI_ENOMEM:
         warnings.warn('PAPI has a bug getting event name from code')
     elif papi_errno != PAPI_OK:
@@ -209,10 +211,11 @@ def cyPAPI_event_name_to_code(str eventname):
         raise Exception(f'PAPI Error {papi_errno}: Failed to get event code')
     return out
 
-def cyPAPI_event_code_to_descr(int event_code):
+def cyPAPI_event_code_to_descr(event_code):
+    # convert Python integer to Numpy value, which follows C overflow logic
+    cdef int papi_errno, evt_code = np.array(event_code).astype(np.intc)
     cdef PAPI_event_info_t info;
-    cdef int papi_errno;
-    papi_errno = PAPI_get_event_info(event_code, &info)
+    papi_errno = PAPI_get_event_info(evt_code, &info)
     if papi_errno != PAPI_OK:
         raise Exception(f'PAPI Error {papi_errno}: Failed to get event info')
     return str(info.short_descr, encoding='utf-8')
@@ -256,8 +259,10 @@ cdef class CyPAPI_EventSet:
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI Error {papi_errno}: Failed to reset eventset {self.event_set}')
 
-    def add_event(self, int event):
-        cdef int papi_errno = PAPI_add_event(self.event_set, event)
+    def add_event(self, event_code):
+        # convert Python integer to Numpy value, which follows C overflow logic
+        cdef int papi_errno, evt_code = np.array(event_code).astype(np.intc)
+        papi_errno = PAPI_add_event(self.event_set, evt_code)
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI Error {papi_errno}: Failed to add event.')
 
