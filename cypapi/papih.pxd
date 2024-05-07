@@ -122,3 +122,5 @@ cdef extern from 'papi.h':
     int PAPI_state(int EventSet, int *status)
     int PAPI_write(int EventSet, long long * values)
     int PAPI_get_eventset_component(int EventSet)
+    int PAPI_query_event(int EventCode)
+    int PAPI_query_named_event(const char *EventName)

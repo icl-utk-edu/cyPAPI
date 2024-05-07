@@ -299,6 +299,20 @@ cdef class CyPAPI_enum_component_events:
     def __next__(self):
         return self.next_event()
 
+def cyPAPI_query_event(event_code):
+    cdef int papi_errno, evt_code = np.array(event_code).astype(np.intc)
+    papi_errno = PAPI_query_event(evt_code)
+
+    return papi_errno
+
+def cyPAPI_query_named_event(event_name):
+    cdef int papi_errno
+    cdef bytes evt_name = event_name.encode('utf8')
+    
+    papi_errno = PAPI_query_named_event(evt_name)
+
+    return papi_errno
+
 def cyPAPI_num_cmp_hwctrs(int cidx):
     return PAPI_num_cmp_hwctrs(cidx)
 
