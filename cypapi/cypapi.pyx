@@ -211,15 +211,6 @@ def cyPAPI_event_name_to_code(str eventname):
         raise Exception(f'PAPI Error {papi_errno}: Failed to get event code')
     return out
 
-def cyPAPI_event_code_to_descr(event_code):
-    # convert Python integer to Numpy value, which follows C overflow logic
-    cdef int papi_errno, evt_code = np.array(event_code).astype(np.intc)
-    cdef PAPI_event_info_t info;
-    papi_errno = PAPI_get_event_info(evt_code, &info)
-    if papi_errno != PAPI_OK:
-        raise Exception(f'PAPI Error {papi_errno}: Failed to get event info')
-    return str(info.short_descr, encoding='utf-8')
-
 cdef class CyPAPI_EventSet:
     cdef int event_set
 
