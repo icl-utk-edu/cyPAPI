@@ -308,7 +308,6 @@ def cyPAPI_query_event(event_code):
 def cyPAPI_query_named_event(event_name):
     cdef int papi_errno
     cdef bytes evt_name = event_name.encode('utf8')
-    
     papi_errno = PAPI_query_named_event(evt_name)
 
     return papi_errno
