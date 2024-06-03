@@ -121,24 +121,10 @@ PAPI_VEC_SP = _PAPI_VEC_SP
 PAPI_VEC_DP = _PAPI_VEC_DP 
 PAPI_REF_CYC = _PAPI_REF_CYC
 
-PAPI_Error = {
-    'PAPI_OK': PAPI_OK,
-    'PAPI_EINVAL': PAPI_EINVAL,
-    'PAPI_ENOMEM': PAPI_ENOMEM,
-    'PAPI_ENOEVNT': PAPI_ENOEVNT,
-    'PAPI_ENOCMP': PAPI_ENOCMP,
-    'PAPI_EISRUN': PAPI_EISRUN,
-    'PAPI_EDELAYINIT': PAPI_EDELAY_INIT
-}
-
 def cyPAPI_library_init():
     cdef int papi_errno = PAPI_library_init(PAPI_VER_CURRENT)
     if papi_errno != PAPI_VER_CURRENT:
         raise Exception('PAPI Error: Failed to initialize PAPI_Library')
-
-def cyPAPI_get_version_string():
-    ver = f'{PAPI_VERSION_MAJOR(PAPI_VERSION)}.{PAPI_VERSION_MINOR(PAPI_VERSION)}.{PAPI_VERSION_REVISION(PAPI_VERSION)}.{PAPI_VERSION_INCREMENT(PAPI_VERSION)}'
-    return ver
 
 def cyPAPI_is_initialized():
     return PAPI_is_initialized()
@@ -174,10 +160,6 @@ def cyPAPI_get_virt_nsec():
 
 def cyPAPI_get_virt_usec():
     return PAPI_get_virt_usec()
-
-def cyPAPI_get_cyc_per_usec() -> int:
-    """Returns the CPU clock speed in cycles per micro sec (same as MHz)."""
-    return PAPI_get_opt(PAPI_CLOCKRATE, NULL)
 
 class CyPAPI_get_component_info:
 
@@ -494,81 +476,5 @@ cdef class CyPAPI_EventSet:
         if cid < 0:
             raise Exception(f'PAPI Error {cid}: Failed to get eventset component index')
         return cid
-
-cdef int INIT_SIZE = 64
-
-cdef class EventSetCollector:
-    cdef int evtset_id
-    cdef long long *values
-    cdef long int counter
-    cdef long int arrsize
-    cdef long long **data
-
-    def __cinit__(self, eventset: object):
-        self.evtset_id = eventset.get_id()
-
-        self.values = <long long *> PyMem_Malloc(PAPI_num_events(self.evtset_id) * sizeof(long long))
-        self.__init_arr__()
-
-    def __init_arr__(self):
-        self.data = <long long **> PyMem_Malloc(INIT_SIZE * sizeof(long long *))
-        self.arrsize = INIT_SIZE
-        self.counter = 0
-        cdef long int i
-        for i in range(INIT_SIZE):
-            self.data[i] = <long long *> PyMem_Malloc((PAPI_num_events(self.evtset_id) + 1) * sizeof(long long))
-
-    def __dealloc__(self):
-        PyMem_Free(self.values)
-        cdef long int i
-        for i in range(self.arrsize):
-            PyMem_Free(self.data[i])
-        PyMem_Free(self.data)
-
-    def start(self):
-        cdef int papi_errno
-
-        papi_errno = PAPI_start(self.evtset_id)
-        if papi_errno == PAPI_EISRUN:
-            warnings.warn('Event set is already running. Ignoring PAPI_start.')
-        elif papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_start failed.')
-
-    cdef void record(self, long long cyc, long long *values):
-        cdef long int i
-        if self.counter >= self.arrsize:
-            self.arrsize *= 2
-            self.data = <long long **> PyMem_Realloc(self.data, self.arrsize * sizeof(long long *))
-            for i in range(self.counter, self.arrsize):
-                self.data[i] = <long long *> PyMem_Malloc((PAPI_num_events(self.evtset_id) + 1) * sizeof(long long))
-
-        self.data[self.counter][0] = cyc
-        for i in range(PAPI_num_events(self.evtset_id)):
-            self.data[self.counter][i+1] = values[i]
-        self.counter += 1
-
-    def read(self):
-        cdef long long cyc = -1
-        cdef int papi_errno = PAPI_read_ts(self.evtset_id, self.values, &cyc)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_read_ts failed.')
-        self.record(cyc, self.values)
-
-    def stop(self):
-        cdef long long cyc = PAPI_get_real_cyc()
-        cdef int papi_errno = PAPI_stop(self.evtset_id, self.values)
-        self.record(cyc, self.values)
-        return self.__get_data_array__()
-
-    cdef object __get_data_array__(self):
-        cdef np.ndarray[np.int64_t, ndim=2] np_data
-        np_data = np.zeros((self.counter, PAPI_num_events(self.evtset_id) + 1), dtype=np.int64)
-        cdef long int i, j
-
-        for i in range(self.counter):
-            for j in range(PAPI_num_events(self.evtset_id) + 1):
-                np_data[i, j] = self.data[i][j]
-
-        return np_data
 
 del atexit, warnings
