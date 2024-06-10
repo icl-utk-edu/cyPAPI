@@ -1,4 +1,4 @@
-# cython: language_level=3
+# cython: language_level=3str
 cimport posix.dlfcn as dlfcn
 cdef void *libhndl = dlfcn.dlopen('libpapi.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOBAL)
 

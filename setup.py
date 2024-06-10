@@ -29,9 +29,9 @@ def configure_extension(ext: Extension, papi_path: str):
 if os.name == 'nt':
     raise NotImplementedError('cypapi does not currently support Windows OS')
 
-ext_papi = Extension('cypapi', sources=['cypapi/cypapi.pyx'], libraries=['papi'], include_dirs=[numpy.get_include()])
-ext_sde = Extension('cysdelib', sources=['cypapi/cysdelib.pyx'], libraries=['papi', 'sde'])
-ext_papi_thr = Extension('cypapithr', sources=['cypapi/threadsampler.pyx'], libraries=['papi'], include_dirs=[numpy.get_include()])
+ext_papi = Extension('cypapi', sources=['cypapi/cypapi.pyx'], libraries=['papi'], include_dirs=[numpy.get_include()], define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")])
+ext_sde = Extension('cysdelib', sources=['cypapi/cysdelib.pyx'], libraries=['papi', 'sde'], define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")])
+ext_papi_thr = Extension('cypapithr', sources=['cypapi/threadsampler.pyx'], libraries=['papi'], include_dirs=[numpy.get_include()], define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")])
 
 papi_path = os.environ.get('PAPI_PATH')
 if not papi_path:

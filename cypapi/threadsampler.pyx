@@ -1,4 +1,4 @@
-# cython: language_level=3
+# cython: language_level=3str
 import threading
 cimport posix.unistd as unistd
 from libc.stdlib cimport malloc, free, calloc, realloc
