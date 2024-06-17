@@ -1,4 +1,4 @@
-# cython: language_level=3
+# cython: language_level=3str
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 import atexit
 import warnings
@@ -618,9 +618,9 @@ cdef class CyPAPI_EventSet:
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI_Error {papi_errno}: Failed to cleanup eventset.')
 
-    def __del__(self):
-        self.cleanup()
-        cdef papi_errno = PAPI_destroy_eventset(&self.event_set)
+    def destroy_eventset(self):
+        cdef papi_errno
+        papi_errno = PAPI_destroy_eventset(&self.event_set)
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI_Errno {papi_errno}: Failed to destroy eventset.')
 
