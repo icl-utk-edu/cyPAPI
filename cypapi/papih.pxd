@@ -1,10 +1,6 @@
 cdef extern from 'papi.h':
-    int PAPI_VER_CURRENT
-    int PAPI_VERSION
-    int PAPI_VERSION_MAJOR(int)
-    int PAPI_VERSION_MINOR(int)
-    int PAPI_VERSION_REVISION(int)
-    int PAPI_VERSION_INCREMENT(int)
+    int _PAPI_VER_CURRENT "PAPI_VER_CURRENT"
+    int _PAPI_VERSION "PAPI_VERSION"
     int PAPI_library_init(int version)
     int PAPI_is_initialized()
     char *PAPI_strerror(int)
