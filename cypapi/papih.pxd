@@ -27,7 +27,8 @@ cdef extern from 'papi.h':
     cdef int PAPI_MAX_STR_LEN
     cdef int PAPI_MIN_STR_LEN
     cdef int PAPI_HUGE_STR_LEN
-    cdef int PAPI_PMU_MAX
+    cdef int _PAPI_PMU_MAX "PAPI_PMU_MAX"
+    cdef int _PAPI_MAX_INFO_TERMS "PAPI_MAX_INFO_TERMS"
 
     cdef int PAPI_OK
     cdef int PAPI_EINVAL
@@ -58,8 +59,22 @@ cdef extern from 'papi.h':
         int available_granularities                # Available granularities
         int hardware_intr_sig                      # Signal used by hardware to deliver PMC events
         int component_type                         # Type of component
-        char **pmu_names              # List of pmu names supported by this component
+        char *pmu_names[80]                        # List of pmu names supported by this component
         int reserved[8]                            # Reserved
+        unsigned int hardware_intr                 # Hw overflow intr, does not need to be emulated in software
+        unsigned int precise_intr                  # Performance interruprs happen precisely
+        unsigned int posix1b_timers                # Using POSIX 1b internal timers (timer_create) instead of setitimer
+        unsigned int kernel_profile                # Has kernel profiling support (buffered interrupts or sprofil-like)
+        unsigned int kernel_multiplex              # In kernel multiplexing
+        unsigned int fast_counter_read             # Supports a user level PMC read instruction
+        unsigned int fast_real_timer               # Supports a fast real timer
+        unsigned int fast_virtual_timer            # Supports a fast virtual timer
+        unsigned int attach                        # Supports attach
+        unsigned int attach_must_ptrace            # Attach must first ptrace and stop the thread/process
+        unsigned int cntr_umasks                   # Counters have unit masks
+        unsigned int cpu                           # Supports specifying cpu number to use with eventset
+        unsigned int inherit                       # Supports child processes inheriting parents counters
+        unsigned int reserved_bits
 
     const PAPI_component_info_t *PAPI_get_component_info(int cidx)
 
@@ -84,23 +99,26 @@ cdef extern from 'papi.h':
     int PAPI_event_name_to_code(const char *in_, int *out)
 
     ctypedef struct PAPI_event_info_t:
-        unsigned int event_code;
-        char* symbol;
-        char* short_descr;
-        char* long_descr;
-        int component_index;
-        char* units;
-        int location;
-        int data_type;
-        int value_type;
-        int timescope;
-        int update_type;
-        int update_freq;
+        unsigned int event_code;    # Preset or Native event code
+        char* symbol;               # Name of the event
+        char* short_descr;          # Short description suitable for use as a label
+        char* long_descr;           # Longer description, typically a sentence
+        int component_index;        # Component event belongs to
+        char* units;                # Units event is measured in
+        int location;               # Location event applies to
+        int data_type;              # Data type returned by PAPI
+        int value_type;             # Sum or absolute
+        int timescope;              # From start, etc.
+        int update_type;            # How event is updated
+        int update_freq;            # How frequently event is updated
         # PRESET SPECIFIC FIELDS FOLLOW
-        unsigned int count;
-        unsigned int event_type;
-        char* derived;
-        char* postfix;
+        unsigned int count;         # Number of terms in the code and name fields
+        unsigned int event_type;    # Event type or category for preset events only
+        char* derived;              # Name of the derived type
+        char* postfix;              # String containing postfix operations
+        unsigned int code[12]       # Array of values that further describe the event
+        char name[12][256]          # Names of code terms
+        char *note                  # An optional developer note
 
     int PAPI_get_event_info(int EventCode, PAPI_event_info_t * info)
 

@@ -3,6 +3,7 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 import atexit
 import warnings
 import numpy as np
+from dataclasses import dataclass, field, InitVar
 cimport numpy as np
 
 cimport posix.dlfcn as dlfcn
@@ -121,6 +122,9 @@ PAPI_VEC_SP = _PAPI_VEC_SP
 PAPI_VEC_DP = _PAPI_VEC_DP 
 PAPI_REF_CYC = _PAPI_REF_CYC
 
+PAPI_MAX_INFO_TERMS = _PAPI_MAX_INFO_TERMS
+PAPI_PMU_MAX = _PAPI_PMU_MAX
+
 def cyPAPI_library_init():
     cdef int papi_errno = PAPI_library_init(PAPI_VER_CURRENT)
     if papi_errno != PAPI_VER_CURRENT:
@@ -160,36 +164,6 @@ def cyPAPI_get_virt_nsec():
 
 def cyPAPI_get_virt_usec():
     return PAPI_get_virt_usec()
-
-class CyPAPI_get_component_info:
-
-    def __init__(self, int cidx):
-        cdef const PAPI_component_info_t* cmp_info = PAPI_get_component_info(cidx)
-        if not cmp_info:
-            raise Exception(f'PAPI Error: Component not found.')
-        self.name = str(cmp_info.name, encoding='utf-8')
-        self.short_name = str(cmp_info.name, encoding='utf-8')
-        self.description = str(cmp_info.description, encoding='utf-8')
-        self.version = str(cmp_info.version, encoding='utf-8')
-        self.support_version = str(cmp_info.support_version, encoding='utf-8')
-        self.kernel_version = str(cmp_info.kernel_version, encoding='utf-8')
-        self.disabled_reason = str(cmp_info.disabled_reason, encoding='utf-8')
-        self.disabled = cmp_info.disabled
-        self.initialized = cmp_info.initialized
-        self.CmpIdx = cmp_info.CmpIdx
-        self.num_cntrs = cmp_info.num_cntrs
-        self.num_mpx_cntrs = cmp_info.num_mpx_cntrs
-        self.num_preset_events = cmp_info.num_preset_events
-        self.num_native_events = cmp_info.num_native_events
-        self.default_domain = cmp_info.default_domain
-        self.available_domains = cmp_info.available_domains
-        self.default_granularity = cmp_info.default_granularity
-        self.available_granularities = cmp_info.available_granularities
-        self.hardware_intr_sig = cmp_info.hardware_intr_sig
-        self.component_type = cmp_info.component_type
-
-    def __str__(self):
-        return str(self.__dict__)
 
 cdef class CyPAPI_enum_preset_events:
     cdef int ntv_code
@@ -316,6 +290,289 @@ def cyPAPI_event_name_to_code(str eventname):
     if papi_errno != PAPI_OK:
         raise Exception(f'PAPI Error {papi_errno}: Failed to get event code')
     return out
+
+@dataclass
+class CypapiGetComponentInfo:
+    """Get information about a specific software component.
+
+    Arguments
+    _________
+    init_cmp_code : int
+        Software component index, required for instantiation.
+
+        Attributes
+    __________
+    name : str
+        Name of software component.
+    short_name : str
+        Short name of software component.
+    description : str
+        Description of software component.
+    version : str
+        Version of software component.
+    support_version : str
+        Version of support library.
+    kernel_version : str
+        Version of kernel PMC support driver.
+    disabled_reason : str
+        Reason for failure of initialization.
+    disabled : int
+        0 if enabled, otherwise error code from initialization.
+    initialized : int
+        Software component is ready to use.
+    CmpIdx : int
+        Index into the vector array for this software component; set at init.
+    num_cntrs : int
+        Number of hardware counters the software component supports.
+    num_mpx_cntrs : int
+        Number of hardware counters the component or PAPI can multiplex.
+    num_preset_events : int
+        Number of preset events the component supports.
+    num_native_events : int
+        Number of native events the component supports.
+    default_domain : int
+        Default domain when this software component is used.
+    available_domains : int
+        Available domains.
+    default_granularity : int
+        Default granularity when this software component is used.
+    available_granularities : int
+        Available granularities.
+    hardware_intr_sig : int
+        Signal used by hardware to deliver PMC events.
+    component_type : int
+        Type of software component.
+    pmu_names : list
+        List of pmu names supported by this software component.
+    reserved : int
+    hardware_intr : int
+        HW overflow instructions.
+    precise_intr : int
+        Performance interrupts happen precisely.
+    posix1b_timers : int
+        Using POSIX 1b internal timers instead of setitimer.
+    kernel_profile : int
+        Has kernel profiling support (buffered interrupts or sprofil-like).
+    kernel_multiplex : int
+        In kernel multiplexing.
+    fast_counter_read : int
+        Supports a user level PMC read instruction.
+    fast_real_timer : int
+        Supports a fast real timer.
+    fast_virtual_timer : int
+        Supports a fast virtual timer.
+    attach : int
+        Supports attach.
+    attach_must_ptrace : int
+        Attach must first ptrace and stop the thread/process.
+    cntr_umasks : int
+        Counters have unit masks.
+    cpu : int
+        Supports specifying cpu number to use with event set.
+    inherit : int
+        Supports child processes inheriting parents counters.
+    reserved_bits : int
+        Reserved bits.
+    """
+    # required during instantiation
+    init_cmp_cidx: InitVar[int]
+    # attributes to be assigned post init
+    name: str = field( init = False )
+    short_name: str = field( init = False )
+    description: str = field( init = False )
+    version: str = field( init = False )
+    support_version: str = field( init = False )
+    kernel_version: str = field( init = False )
+    disabled_reason: str = field( init = False )
+    disabled: int = field( init = False)
+    initialized: int = field( init = False )
+    CmpIdx: int = field( init = False )
+    num_cntrs: int = field( init = False )
+    num_mpx_cntrs: int = field( init = False )
+    num_preset_events: int = field( init = False )
+    num_native_events: int = field( init = False )
+    default_domain: int = field( init = False )
+    available_domains: int = field( init = False )
+    default_granularity: int = field( init = False )
+    available_granularities: int = field( init = False )
+    hardware_intr_sig: int = field( init = False )
+    component_type: int = field( init = False )
+    pmu_names: list = field( init = False )
+    reserved: list = field( init = False )
+    hardware_intr: int = field( init = False )
+    precise_intr: int = field( init = False )
+    posix1b_timers: int = field( init = False )
+    kernel_profile: int = field( init = False )
+    kernel_multiplex: int = field( init = False )
+    fast_counter_read: int = field( init = False )
+    fast_real_timer: int = field( init = False )
+    fast_virtual_timer: int = field( init = False )
+    attach: int = field( init = False )
+    attach_must_ptrace: int = field( init = False )
+    cntr_umasks: int = field( init = False )
+    cpu: int = field( init = False )
+    inherit: int = field( init = False )
+    reserved_bits: int = field( init = False )
+
+    # process PAPI_component_info_t structure
+    def __post_init__(self, init_cmp_cidx):
+        """Initialize attributes depending on PAPI_get_component_info call."""
+        valid_pmu_names = []
+        cdef const PAPI_component_info_t *cmp_info = NULL
+        cmp_info = PAPI_get_component_info(init_cmp_cidx)
+        if cmp_info == NULL:
+            raise Exception(f'Failed to get component info.')
+
+        # parse pmu_names to avoid seg fault from NULL entries
+        for idx in range(0, _PAPI_PMU_MAX):
+            if cmp_info.pmu_names[idx] == NULL:
+                continue
+            valid_pmu_names.append( str(cmp_info.pmu_names[idx],
+                                    encoding = 'utf-8') )
+
+        # assign post_init attributes
+        self.name = str(cmp_info.name, encoding = 'utf-8')
+        self.short_name = str(cmp_info.short_name, encoding = 'utf-8')
+        self.description = str(cmp_info.description, encoding = 'utf-8')
+        self.version = str(cmp_info.version, encoding = 'utf-8')
+        self.support_version = str(cmp_info.support_version, encoding = 'utf-8')
+        self.kernel_version = str(cmp_info.kernel_version, encoding = 'utf-8')
+        self.disabled_reason = str(cmp_info.disabled_reason, encoding = 'utf-8')
+        self.disabled = cmp_info.disabled
+        self.initialized = cmp_info.initialized
+        self.CmpIdx = cmp_info.CmpIdx
+        self.num_cntrs = cmp_info.num_cntrs
+        self.num_mpx_cntrs = cmp_info.num_mpx_cntrs
+        self.num_preset_events = cmp_info.num_preset_events
+        self.num_native_events = cmp_info.num_native_events
+        self.default_domain = cmp_info.default_domain
+        self.available_domains = cmp_info.available_domains
+        self.default_granularity = cmp_info.default_granularity
+        self.available_granularities = cmp_info.available_granularities
+        self.hardware_intr_sig = cmp_info.hardware_intr_sig
+        self.component_type = cmp_info.component_type
+        self.pmu_names = valid_pmu_names
+        self.reserved = [cmp_info.reserved[idx] for idx in range(0, 8)]
+        self.hardware_intr = cmp_info.hardware_intr
+        self.precise_intr = cmp_info.precise_intr
+        self.posix1b_timers = cmp_info.posix1b_timers
+        self.kernel_profile = cmp_info.kernel_profile
+        self.kernel_multiplex = cmp_info.kernel_multiplex
+        self.fast_counter_read = cmp_info.fast_counter_read
+        self.fast_real_timer = cmp_info.fast_real_timer
+        self.fast_virtual_timer = cmp_info.fast_virtual_timer
+        self.attach = cmp_info.attach
+        self.attach_must_ptrace = cmp_info.attach_must_ptrace
+        self.cntr_umasks = cmp_info.cntr_umasks
+        self.cpu = cmp_info.cpu
+        self.inherit = cmp_info.inherit
+        self.reserved_bits = cmp_info.reserved_bits
+
+@dataclass
+class CypapiGetEventInfo:
+    """Collects descriptive strings and values for the user specified event.
+
+    Arguments
+    _________
+    init_evt_code : int
+        Event code, required for instantiation.
+
+    Attributes
+    __________
+    event_code : int
+        Event code, either preset or native.
+    symbol : str
+        Name of the event.
+    short_descr : str
+        A short description suitable for use as a label.
+    long_descr : str
+        A longer description typically a sentence or a paragraph.
+    comonent_index : int
+        Component this event belongs to.
+    units : str
+        Units event is measured in.
+    location : int
+        Location event applies to.
+    data_type : int
+        Data type returned by PAPI.
+    value_type : int
+        Sum or absolute.
+    timescope : int
+        From start, etc.
+    update_type : int
+        How event is updated.
+    update_freq : int
+        How frequently event is updated.
+    count : int
+        Number of terms in the code and name fields.
+    event_type : int
+        Event type or category for preset events only.
+    derived : str
+        Name of the derived type.
+    postfix : str
+        String containing postfix operations.
+    code : list
+        Array of values that further describe the event.
+    name : list
+        Names of code terms.
+    note : str
+        Optional developer note.
+    """
+    # required during instantiation
+    init_evt_code: InitVar[int]
+    # attributes to be assigned post init
+    event_code: int = field( init = False )
+    symbol: str = field( init = False )
+    short_descr: str = field( init = False )
+    long_descr: str = field( init = False )
+    component_index: int = field( init = False )
+    units: str = field( init = False )
+    location: int = field( init = False )
+    data_type: int = field( init = False )
+    value_type: int = field( init = False )
+    timescope: int = field( init = False )
+    update_type: int = field( init = False )
+    update_freq: int = field( init = False )
+    count: int = field( init = False )
+    event_type: int = field( init = False )
+    derived: str = field( init = False )
+    postfix: str = field( init = False )
+    code: list = field( init = False )
+    name: list = field( init = False )
+    note: str = field( init = False )
+
+    # process PAPI_event_info_t structure
+    def __post_init__(self, init_evt_code):
+        """Initialize attributes depending on PAPI_get_event_info call."""
+        cdef PAPI_event_info_t info
+        cdef int papi_errno, evt_code = np.array(init_evt_code).astype(np.intc)
+
+        papi_errno = PAPI_get_event_info(evt_code, &info)
+        if papi_errno != PAPI_OK:
+            raise Exception( f'PAPI Error {papi_errno}: '
+                             'Failed to get event info.' )
+
+        # assign post init attributes
+        self.event_code = info.event_code
+        self.symbol = str(info.symbol, encoding = 'utf-8')
+        self.short_descr = str(info.short_descr, encoding = 'utf-8')
+        self.long_descr = str(info.long_descr, encoding = 'utf-8')
+        self.component_index = info.component_index
+        self.units = str(info.units, encoding = 'utf-8')
+        self.location = info.location
+        self.data_type = info.data_type
+        self.value_type = info.value_type
+        self.timescope = info.timescope
+        self.update_type = info.update_type
+        self.update_freq = info.update_freq
+        self.count = info.count
+        self.event_type = info.event_type
+        self.derived = str(info.derived, encoding = 'utf-8')
+        self.postfix = str(info.postfix, encoding = 'utf-8')
+        self.code = [ info.code[idx] for idx in range(0, _PAPI_MAX_INFO_TERMS) ]
+        self.name = [ str(info.name[idx], encoding = 'utf-8')
+                      for idx in range(0, _PAPI_MAX_INFO_TERMS) ]
+        self.note = str(info.note, encoding = 'utf-8')
 
 cdef class CyPAPI_EventSet:
     cdef int event_set
