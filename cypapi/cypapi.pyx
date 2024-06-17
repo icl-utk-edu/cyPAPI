@@ -12,6 +12,16 @@ cdef void *libhndl = dlfcn.dlopen('libsde.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOB
 from papih cimport *
 from papiStdEventDefh cimport *
 
+# PAPI versioning
+PAPI_VER_CURRENT = _PAPI_VER_CURRENT
+PAPI_VERSION = _PAPI_VERSION
+
+# lambda functions to obtain PAPI version number; equivalent to C #define
+PAPI_VERSION_MAJOR = lambda x: ( <unsigned int>x >> 24 & <unsigned int>0xff )
+PAPI_VERSION_MINOR = lambda x: ( <unsigned int>x >> 16 & <unsigned int>0xff )
+PAPI_VERSION_REVISION = lambda x: ( <unsigned int>x >> 8 & <unsigned int>0xff )
+PAPI_VERSION_INCREMENT = lambda x: ( <unsigned int>x & <unsigned int>0xff )
+
 # importing PAPI preset #defines to be used in cyPAPI
 PAPI_L1_DCM = _PAPI_L1_DCM 
 PAPI_L1_ICM = _PAPI_L1_ICM 
@@ -125,10 +135,24 @@ PAPI_REF_CYC = _PAPI_REF_CYC
 PAPI_MAX_INFO_TERMS = _PAPI_MAX_INFO_TERMS
 PAPI_PMU_MAX = _PAPI_PMU_MAX
 
-def cyPAPI_library_init():
-    cdef int papi_errno = PAPI_library_init(PAPI_VER_CURRENT)
-    if papi_errno != PAPI_VER_CURRENT:
-        raise Exception('PAPI Error: Failed to initialize PAPI_Library')
+def cyPAPI_library_init(version):
+    """Initialize cyPAPI library with linked PAPI build.
+
+    Parameters
+    __________
+    version : int
+        Value of PAPI_VER_CURRENT.
+    """
+    cdef int retval
+    # check correct version is provided
+    if version != _PAPI_VER_CURRENT:
+        raise ValueError('Argument version only takes PAPI_VER_CURRENT.')
+    # check PAPI initialization was successful
+    retval = PAPI_library_init(version)
+    if retval != _PAPI_VER_CURRENT:
+        raise Exception( 'Failed initialization of cyPAPI. See if linked PAPI '
+                         'build was successfully installed.' )
+    return retval
 
 def cyPAPI_is_initialized():
     return PAPI_is_initialized()
