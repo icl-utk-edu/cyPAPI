@@ -255,7 +255,7 @@ cdef void _PAPI_enum_cmp_event(int *EventCode, int modifier, int cidx) except *:
     if papi_errno == PAPI_ENOEVNT or papi_errno == PAPI_EINVAL:
         raise StopIteration
 
-cdef class CyPAPI_enum_component_events:
+cdef class CypapiEnumCmpEvent:
     cdef int ntv_code
     cdef int cidx
     cdef int modifier
@@ -598,7 +598,7 @@ class CypapiGetEventInfo:
                       for idx in range(0, _PAPI_MAX_INFO_TERMS) ]
         self.note = str(info.note, encoding = 'utf-8')
 
-cdef class CyPAPI_EventSet:
+cdef class CypapiCreateEventset:
     cdef int event_set
 
     def __cinit__(self):
@@ -613,7 +613,7 @@ cdef class CyPAPI_EventSet:
     def get_id(self):
         return self.event_set
 
-    def cleanup(self):
+    def cleanup_eventset(self):
         cdef papi_errno = PAPI_cleanup_eventset(self.event_set)
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI_Error {papi_errno}: Failed to cleanup eventset.')
@@ -627,7 +627,7 @@ cdef class CyPAPI_EventSet:
     def num_events(self):
         return PAPI_num_events(self.event_set)
 
-    def assign_component(self, int cidx):
+    def assign_eventset_component(self, int cidx):
         cdef int papi_errno = PAPI_assign_eventset_component(self.event_set, cidx)
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI Error {papi_errno}: Failed to assign component to eventset {self.event_set}')
@@ -752,7 +752,7 @@ cdef class CyPAPI_EventSet:
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI Error {papi_errno}: PAPI_write failed')
 
-    def get_component(self):
+    def get_eventset_component(self):
         cdef int cid = PAPI_get_eventset_component(self.event_set)
         if cid < 0:
             raise Exception(f'PAPI Error {cid}: Failed to get eventset component index')
