@@ -1,4 +1,8 @@
 cdef extern from "papiStdEventDefs.h":
+    # PAPI masks
+    cdef int _PAPI_PRESET_MASK "PAPI_PRESET_MASK"
+    cdef int _PAPI_NATIVE_MASK "PAPI_NATIVE_MASK"
+    # PAPI presets
     cdef int _PAPI_L1_DCM  "PAPI_L1_DCM"   # Level 1 data cache misses
     cdef int _PAPI_L1_ICM  "PAPI_L1_ICM"   # Level 1 instruction cache misses
     cdef int _PAPI_L2_DCM  "PAPI_L2_DCM"   # Level 2 data cache misses

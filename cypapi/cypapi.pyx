@@ -135,6 +135,18 @@ PAPI_REF_CYC = _PAPI_REF_CYC
 PAPI_MAX_INFO_TERMS = _PAPI_MAX_INFO_TERMS
 PAPI_PMU_MAX = _PAPI_PMU_MAX
 
+# importing values for 'modifier' parameter for cyPAPI_enum_event
+PAPI_ENUM_FIRST = _PAPI_ENUM_FIRST
+PAPI_ENUM_EVENTS = _PAPI_ENUM_EVENTS
+PAPI_ENUM_ALL = _PAPI_ENUM_ALL
+PAPI_PRESET_ENUM_AVAIL = _PAPI_PRESET_ENUM_AVAIL
+PAPI_NTV_ENUM_UMASKS = _PAPI_NTV_ENUM_UMASKS
+PAPI_NTV_ENUM_UMASK_COMBOS = _PAPI_NTV_ENUM_UMASK_COMBOS
+
+# importing native mask and preset mask
+PAPI_PRESET_MASK = _PAPI_PRESET_MASK
+PAPI_NATIVE_MASK = _PAPI_NATIVE_MASK
+
 def cyPAPI_library_init(version):
     """Initialize cyPAPI library with linked PAPI build.
 
@@ -189,64 +201,67 @@ def cyPAPI_get_virt_nsec():
 def cyPAPI_get_virt_usec():
     return PAPI_get_virt_usec()
 
-cdef class CyPAPI_enum_preset_events:
-    cdef int ntv_code
-    cdef int modifier
-    cdef int umod
+def cyPAPI_enum_event(EventCode, modifier):
+    """Enumerate PAPI preset or native events.
+    
+    Parameters
+    __________
+    EventCode : int
+        A defined preset or native event such as PAPI_TOT_INS.
+    modifier : int
+        Modifies the search logic. Options to use include: PAPI_ENUM_FIRST,
+        PAPI_ENUM_EVENTS, PAPI_ENUM_ALL, PAPI_NTV_ENUM_UMASKS,
+        PAPI_NTV_ENUM_UMASK_COMBOS, and PAPI_PRESET_ENUM_AVAIL.
 
-    def __cinit__(self, str modifier=None):
-        self.modifier = PAPI_ENUM_FIRST
-        modifier = 'all' if modifier is None else modifier.lower()
-        if modifier == 'all':
-            self.umod = PAPI_ENUM_EVENTS
-        elif modifier == 'avail':
-            self.umod = PAPI_PRESET_ENUM_AVAIL
-        elif modifier == 'msc':
-            self.umod = PAPI_PRESET_ENUM_MSC
-        elif modifier == 'ins':
-            self.umod = PAPI_PRESET_ENUM_INS
-        elif modifier == 'idl':
-            self.umod = PAPI_PRESET_ENUM_IDL
-        elif modifier == 'br':
-            self.umod = PAPI_PRESET_ENUM_BR
-        elif modifier == 'cnd':
-            self.umod = PAPI_PRESET_ENUM_CND
-        elif modifier == 'mem':
-            self.umod = PAPI_PRESET_ENUM_MEM
-        elif modifier == 'cach':
-            self.umod = PAPI_PRESET_ENUM_CACH
-        elif modifier == 'l1':
-            self.umod = PAPI_PRESET_ENUM_L1
-        elif modifier == 'l2':
-            self.umod = PAPI_PRESET_ENUM_L2
-        elif modifier == 'l3':
-            self.umod = PAPI_PRESET_ENUM_L3
-        elif modifier == 'tlb':
-            self.umod = PAPI_PRESET_ENUM_TLB
-        elif modifier == 'fp':
-            self.umod = PAPI_PRESET_ENUM_FP
-        else:
-            raise Exception(f'cyPAPI Error: Invalid option "{modifier}" for preset enumeration')
-        self.ntv_code = 0 | PAPI_PRESET_MASK
+    Returns
+    _______
+    dict
+        A dictionary containing the event names as keys and the event codes in 
+        hex as values.
+    int
+        An event code.
+    """
+    cdef int papi_errno = PAPI_OK
+    cdef int evt_code = np.array(EventCode).astype(np.intc)
+    cdef int mod = np.array(modifier).astype(np.intc)
+    hexcode = 0xffffffff
+    events = {}
 
-    def next_event(self):
-        cdef int papi_errno
-        if self.modifier == PAPI_ENUM_FIRST:
-            papi_errno = PAPI_enum_event(&self.ntv_code, PAPI_ENUM_FIRST)
-            if papi_errno != PAPI_OK:
-                raise Exception(f'PAPI Error {papi_errno}: Failed to enumerate preset event')
-            self.modifier = self.umod
-            return self.ntv_code
-        papi_errno = PAPI_enum_event(&self.ntv_code, self.umod);
+    # check if a valid modifier has been provided
+    valid_modifiers = [ _PAPI_ENUM_FIRST, _PAPI_ENUM_EVENTS, _PAPI_ENUM_ALL,
+                        _PAPI_PRESET_ENUM_AVAIL, _PAPI_NTV_ENUM_UMASKS,
+                        _PAPI_NTV_ENUM_UMASK_COMBOS]
+    if modifier not in valid_modifiers:
+        raise ValueError( 'Modifier value not supported. Run '
+                          'help(cyPAPI_enum_event) to see available modifiers.')
+
+    # case if PAPI_ENUM_FIRST modifier provided
+    if mod == _PAPI_ENUM_FIRST:
+        papi_errno = PAPI_enum_event(&evt_code, mod)
         if papi_errno != PAPI_OK:
-                raise StopIteration
-        return self.ntv_code
+            raise Exception('Failed to enumerate first event.')
+        evt_name = cyPAPI_event_code_to_name(evt_code)
+        events[evt_name] = hex(evt_code & hexcode)
+    # case if modifier other than PAPI_ENUM_FIRST_PROVIDED
+    else:
+        while True:
+            papi_errno = PAPI_enum_event(&evt_code, mod)
+             # fill dictionary
+            if papi_errno == PAPI_OK: 
+                evt_name = cyPAPI_event_code_to_name(evt_code) 
+                events[evt_name] = hex(evt_code & hexcode) 
+            # dictonary has finished being filled
+            elif papi_errno == PAPI_EINVAL or papi_errno == PAPI_ENOEVNT: 
+                break 
+            # provided EventCode not found
+            elif papi_errno == PAPI_ENOCMP: 
+                raise Exception('Component index is not set (PAPI_ENOCMP -17).')
+            # error uncounted for, function rework possibly needed
+            else: 
+                raise Exception('Internal error, please send mail to the'
+                                ' developers (PAPI_EBUG -6).')
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self.next_event()
+    return events, evt_code
 
 cdef void _PAPI_enum_cmp_event(int *EventCode, int modifier, int cidx) except *:
     cdef int papi_errno = PAPI_enum_cmp_event(EventCode, modifier, cidx)
@@ -263,7 +278,7 @@ cdef class CypapiEnumCmpEvent:
     def __cinit__(self, int cidx):
         self.cidx = cidx
         self.modifier = PAPI_ENUM_FIRST
-        self.ntv_code = 0 | PAPI_NATIVE_MASK
+        self.ntv_code = 0 | _PAPI_NATIVE_MASK
     
     def next_event(self):
         if self.modifier == PAPI_ENUM_FIRST:
