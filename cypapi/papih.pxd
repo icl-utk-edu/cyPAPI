@@ -17,9 +17,15 @@ cdef extern from 'papi.h':
     cdef int PAPI_CLOCKRATE
     int  PAPI_get_opt(int option, void *ptr)
 
-    cdef int PAPI_NATIVE_MASK
-    cdef int PAPI_ENUM_FIRST
-    cdef int PAPI_ENUM_EVENTS
+    # generic PAPI modifiers
+    cdef int _PAPI_ENUM_FIRST "PAPI_ENUM_FIRST"
+    cdef int _PAPI_ENUM_EVENTS "PAPI_ENUM_EVENTS"
+    cdef int _PAPI_ENUM_ALL "PAPI_ENUM_ALL"
+    # preset PAPI modifiers
+    cdef int _PAPI_PRESET_ENUM_AVAIL "PAPI_PRESET_ENUM_AVAIL"
+    # native PAPI modifiers
+    cdef int _PAPI_NTV_ENUM_UMASKS "PAPI_NTV_ENUM_UMASKS"
+    cdef int _PAPI_NTV_ENUM_UMASK_COMBOS "PAPI_NTV_ENUM_UMASK_COMBOS"
     cdef int PAPI_MAX_STR_LEN
     cdef int PAPI_MIN_STR_LEN
     cdef int PAPI_HUGE_STR_LEN
@@ -75,20 +81,6 @@ cdef extern from 'papi.h':
     const PAPI_component_info_t *PAPI_get_component_info(int cidx)
 
     int PAPI_num_cmp_hwctrs(int cidx)
-    cdef int PAPI_PRESET_MASK
-    cdef int PAPI_PRESET_ENUM_AVAIL
-    cdef int PAPI_PRESET_ENUM_MSC
-    cdef int PAPI_PRESET_ENUM_INS
-    cdef int PAPI_PRESET_ENUM_IDL
-    cdef int PAPI_PRESET_ENUM_BR
-    cdef int PAPI_PRESET_ENUM_CND
-    cdef int PAPI_PRESET_ENUM_MEM
-    cdef int PAPI_PRESET_ENUM_CACH
-    cdef int PAPI_PRESET_ENUM_L1
-    cdef int PAPI_PRESET_ENUM_L2
-    cdef int PAPI_PRESET_ENUM_L3
-    cdef int PAPI_PRESET_ENUM_TLB
-    cdef int PAPI_PRESET_ENUM_FP
     int PAPI_enum_event(int *EventCode, int modifier)
     int PAPI_enum_cmp_event(int *EventCode, int modifier, int cidx)
     int PAPI_event_code_to_name(int EventCode, char *out)
