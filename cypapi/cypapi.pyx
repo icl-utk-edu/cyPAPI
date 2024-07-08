@@ -706,22 +706,30 @@ cdef class CypapiCreateEventset:
         return result, cyc
 
     def accum(self, list values):
-        cdef int num_events = self.num_events()
-        if num_events != len(values):
+        cdef int papi_errno
+        # the list values must be initialized for accum
+        if self.num_events() != len(values):
             raise Exception("Length of values and number of added events don't match")
-        cdef long long * vals = <long long*> PyMem_Malloc(num_events * sizeof(long long))
-        if not vals:
+        # memory allocation for array to be passed to PAPI function
+        cdef long long *counter_vals= <long long *> PyMem_Malloc(
+            self.num_events() * sizeof(long long) )
+        if not counter_vals:
             raise Exception(f'Failed to allocate array')
-        cdef int i
-        for i in range(num_events):
-            vals[i] = values[i]
-        cdef int papi_errno = PAPI_accum(self.event_set, vals)
+
+        # handle PAPI function call
+        for i in range(self.num_events()):
+            counter_vals[i] = values[i]
+        papi_errno = PAPI_accum(self.event_set, counter_vals)
         if papi_errno != PAPI_OK:
-            PyMem_Free(vals)
+            PyMem_Free(counter_vals)
             raise Exception(f'PAPI Error {papi_errno}: PAPI_accum failed')
-        for i in range(num_events):
-            values[i] = vals[i]
-        PyMem_Free(vals)
+        
+        # try to convert array of counter values to list to be returned
+        try:
+            return [counter_vals[idx] for idx in range( 0, self.num_events() )]
+        # free memory
+        finally:
+            PyMem_Free(counter_vals)
 
     def list_events(self, probe = False):
         cdef int *evts, papi_errno, num_events = self.num_events()
