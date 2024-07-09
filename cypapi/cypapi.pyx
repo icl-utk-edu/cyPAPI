@@ -699,6 +699,7 @@ cdef class CypapiCreateEventset:
         # handle PAPI function call
         papi_errno = PAPI_read(self.event_set, counter_vals)
         if papi_errno != PAPI_OK:
+            PyMem_Free(counter_vals)
             raise Exception(f'PAPI Error {papi_errno}: PAPI_read failed')
         
         # try to convert array of counter values to list to be returned
@@ -720,6 +721,7 @@ cdef class CypapiCreateEventset:
         # handle PAPI function call
         papi_errno = PAPI_read_ts(self.event_set, counter_vals, &cycles)
         if papi_errno != PAPI_OK:
+            PyMem_Free(counter_vals)
             raise Exception(f'PAPI Error {papi_errno}: PAPI_read_ts failed')
         
         # try to convert array of counter values to list to be returned
