@@ -668,42 +668,67 @@ cdef class CypapiCreateEventset:
             raise Exception(f'PAPI Error {papi_errno}: PAPI_start faled')
 
     def stop(self):
-        cdef int num_events = self.num_events()
-        cdef long long *values = <long long *> PyMem_Malloc(num_events * sizeof(long long))
-        if not values:
+        cdef int papi_errno
+         # memory allocation for array to be passed to PAPI function
+        cdef long long *counter_vals = <long long *> PyMem_Malloc(
+            self.num_events() * sizeof(long long) )
+        if not counter_vals:
             raise MemoryError('Failed to allocate long long array')
-        cdef int papi_errno = PAPI_stop(self.event_set, values)
+        
+        # handle PAPI function call
+        papi_errno = PAPI_stop(self.event_set, counter_vals)
         if papi_errno != PAPI_OK:
             PyMem_Free(values)
             raise Exception(f'PAPI Error {papi_errno}: PAPI_stop faled')
-        result = [values[i] for i in range(num_events)]
-        PyMem_Free(values)
-        return result
+
+        # try to convert array of counter values to list to be returned
+        try:
+            return [counter_vals[idx] for idx in range( 0, self.num_events() )]
+        # free memory
+        finally:
+            PyMem_Free(counter_vals)
 
     def read(self):
-        cdef int num_events = self.num_events()
-        cdef long long *values = <long long *> PyMem_Malloc(num_events * sizeof(long long))
-        if not values:
+        cdef int papi_errno
+        # memory allocation for array to be passed to PAPI function
+        cdef long long *counter_vals = <long long *> PyMem_Malloc(
+            self.num_events() * sizeof(long long) )
+        if not counter_vals:
             raise MemoryError('Failed to allocate long long array')
-        cdef int papi_errno = PAPI_read(self.event_set, values)
+        
+        # handle PAPI function call
+        papi_errno = PAPI_read(self.event_set, counter_vals)
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI Error {papi_errno}: PAPI_read failed')
-        result = [values[i] for i in range(num_events)]
-        PyMem_Free(values)
-        return result
+        
+        # try to convert array of counter values to list to be returned
+        try:
+            return [counter_vals[idx] for idx in range( 0, self.num_events() )]
+        # free memory
+        finally:
+            PyMem_Free(counter_vals)
 
     def read_ts(self):
-        cdef int num_events = self.num_events()
-        cdef long long *values = <long long *> PyMem_Malloc(num_events * sizeof(long long))
-        if not values:
+        cdef int papi_errno
+        cdef long long cycles = -1
+        # memory allocation for array to be passed to PAPI function
+        cdef long long *counter_vals = <long long *> PyMem_Malloc(
+            self.num_events() * sizeof(long long) )
+        if not counter_vals:
             raise Exception(f'Failed to allocate array')
-        cdef long long cyc = -1
-        cdef int papi_errno = PAPI_read_ts(self.event_set, values, &cyc)
+        
+        # handle PAPI function call
+        papi_errno = PAPI_read_ts(self.event_set, counter_vals, &cycles)
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI Error {papi_errno}: PAPI_read_ts failed')
-        result = [values[i] for i in range(num_events)]
-        PyMem_Free(values)
-        return result, cyc
+        
+        # try to convert array of counter values to list to be returned
+        try:
+            return ([counter_vals[idx] for idx in range( 0, self.num_events() )],
+                    cycles)
+        # free memory
+        finally:
+            PyMem_Free(counter_vals)
 
     def accum(self, list values):
         cdef int papi_errno
@@ -743,12 +768,15 @@ cdef class CypapiCreateEventset:
             if papi_errno != PAPI_OK:
                 raise Exception(f'PAPI Error {papi_errno}: PAPI_list_events failed.')
 
-            result = [evts[i] for i in range(num_events)]
-            PyMem_Free(evts)
+            # try to convert array of counter values to list to be returned
+            try:
+                return [evts[i] for i in range( 0, num_events )]
+            # free memory
+            finally:
+                PyMem_Free(evts)
         # probe EventSet
         else:
-            result = num_events
-        return result
+            return num_events
 
     def state(self):
         cdef int val = -1
