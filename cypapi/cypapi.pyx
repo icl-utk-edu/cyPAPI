@@ -678,7 +678,7 @@ cdef class CypapiCreateEventset:
         # handle PAPI function call
         papi_errno = PAPI_stop(self.event_set, counter_vals)
         if papi_errno != PAPI_OK:
-            PyMem_Free(values)
+            PyMem_Free(counter_vals)
             raise Exception(f'PAPI Error {papi_errno}: PAPI_stop faled')
 
         # try to convert array of counter values to list to be returned
@@ -786,6 +786,7 @@ cdef class CypapiCreateEventset:
         return val
 
     def write(self, list values):
+        cdef int papi_errno
         cdef int num_events = self.num_events()
         if len(values) > num_events:
             raise Exception('Too many values to write')
@@ -795,7 +796,7 @@ cdef class CypapiCreateEventset:
         cdef int i
         for i in range(len(values)):
             vals[i] = values[i]
-        cdef papi_errno = PAPI_write(self.event_set, vals)
+        papi_errno = PAPI_write(self.event_set, vals)
         PyMem_Free(vals)
         if papi_errno != PAPI_OK:
             raise Exception(f'PAPI Error {papi_errno}: PAPI_write failed')
