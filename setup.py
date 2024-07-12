@@ -33,7 +33,7 @@ ext_papi = Extension('cypapi', sources=['cypapi/cypapi.pyx'], libraries=['papi']
 ext_sde = Extension('cysdelib', sources=['cypapi/cysdelib.pyx'], libraries=['papi', 'sde'], define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")])
 ext_papi_thr = Extension('cypapithr', sources=['cypapi/threadsampler.pyx'], libraries=['papi'], include_dirs=[numpy.get_include()], define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")])
 
-papi_path = os.environ.get('PAPI_PATH')
+papi_path = os.environ.get('PAPI_DIR')
 if not papi_path:
     papi_path = get_papi_path_pkg_config()
 if not papi_path:
