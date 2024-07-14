@@ -1,53 +1,109 @@
+# File contains declarations from the header file papi.h 
 cdef extern from 'papi.h':
-    int _PAPI_VER_CURRENT "PAPI_VER_CURRENT"
-    int _PAPI_VERSION "PAPI_VERSION"
-    int PAPI_library_init(int version)
-    int PAPI_is_initialized()
-    char *PAPI_strerror(int)
-    int PAPI_num_components()
-    int PAPI_get_component_index(const char *name)
-    void  PAPI_shutdown()
-
-    long long PAPI_get_real_cyc()
-    long long PAPI_get_real_nsec()
-    long long PAPI_get_real_usec()
-    long long PAPI_get_virt_cyc()
-    long long PAPI_get_virt_nsec()
-    long long PAPI_get_virt_usec()
-    cdef int PAPI_CLOCKRATE
-    int  PAPI_get_opt(int option, void *ptr)
-
-    # generic PAPI modifiers
-    cdef int _PAPI_ENUM_FIRST "PAPI_ENUM_FIRST"
-    cdef int _PAPI_ENUM_EVENTS "PAPI_ENUM_EVENTS"
-    cdef int _PAPI_ENUM_ALL "PAPI_ENUM_ALL"
-    # preset PAPI modifiers
-    cdef int _PAPI_PRESET_ENUM_AVAIL "PAPI_PRESET_ENUM_AVAIL"
-    # native PAPI modifiers
-    cdef int _PAPI_NTV_ENUM_UMASKS "PAPI_NTV_ENUM_UMASKS"
-    cdef int _PAPI_NTV_ENUM_UMASK_COMBOS "PAPI_NTV_ENUM_UMASK_COMBOS"
+    # Section for PAPI #define's
+    cdef int PAPI_NULL
+    ## PAPI error codes
+    cdef int PAPI_OK                                                            
+    cdef int PAPI_EINVAL                                                        
+    cdef int PAPI_ENOMEM                                                        
+    cdef int PAPI_ENOEVNT                                                       
+    cdef int PAPI_ENOCMP                                                        
+    cdef int PAPI_EISRUN                                                        
+    cdef int PAPI_EDELAY_INIT
+    ## PAPI string lengths
     cdef int PAPI_MAX_STR_LEN
     cdef int PAPI_MIN_STR_LEN
     cdef int PAPI_HUGE_STR_LEN
+    ## PAPI array lengths
     cdef int _PAPI_PMU_MAX "PAPI_PMU_MAX"
     cdef int _PAPI_MAX_INFO_TERMS "PAPI_MAX_INFO_TERMS"
+    ## Option's for PAPI_get_opt
+    cdef int PAPI_CLOCKRATE
 
-    cdef int PAPI_OK
-    cdef int PAPI_EINVAL
-    cdef int PAPI_ENOMEM
-    cdef int PAPI_ENOEVNT
-    cdef int PAPI_ENOCMP
-    cdef int PAPI_EISRUN
-    cdef int PAPI_EDELAY_INIT
+    # Section for PAPI functions related to initialization and shutdown
+    ## Initialization
+    int PAPI_library_init(int version)
+    int PAPI_is_initialized()
+    ## Versioning
+    int _PAPI_VER_CURRENT "PAPI_VER_CURRENT"
+    int _PAPI_VERSION "PAPI_VERSION"
+    ## Shutdown 
+    void PAPI_shutdown()
 
+    # Section for PAPI functions related to timer's
+    ## Real timers
+    long long PAPI_get_real_cyc()                                               
+    long long PAPI_get_real_nsec()                                              
+    long long PAPI_get_real_usec()
+    ## Virtual timers                                            
+    long long PAPI_get_virt_cyc()                                               
+    long long PAPI_get_virt_nsec()                                              
+    long long PAPI_get_virt_usec() 
+
+    # Section for PAPI functions related to event sets 
+    int PAPI_create_eventset(int *EventSet)
+    int PAPI_cleanup_eventset(int EventSet)                                     
+    int PAPI_destroy_eventset(int *EventSet)                                    
+    int PAPI_state(int EventSet, int *status)
+    ## Getting eventset info                                     
+    int PAPI_num_events(int EventSet)
+    int PAPI_list_events(int EventSet, int *Events, int *number)
+    ## Component related                
+    int PAPI_assign_eventset_component(int EventSet, int cidx)
+    int PAPI_get_eventset_component(int EventSet)                  
+    int PAPI_reset(int EventSet)
+    ## Adding events                                                
+    int PAPI_add_event(int EventSet, int Event)                                 
+    int PAPI_add_named_event(int EventSet, const char *EventName)
+    ## Counting hardware events               
+    int PAPI_start(int EventSet)                                                
+    int PAPI_stop(int EventSet, long long * values)                             
+    int PAPI_read(int EventSet, long long * values)                             
+    int PAPI_read_ts(int EventSet, long long * values, long long *cyc)          
+    int PAPI_accum(int EventSet, long long * values)                            
+    int PAPI_write(int EventSet, long long * values)                            
+
+    # Section for PAPI functions related to the components
+    int PAPI_num_cmp_hwctrs(int cidx)
+    int PAPI_num_components()
+    int PAPI_enum_cmp_event(int *EventCode, int modifier, int cidx)
+    int PAPI_get_component_index(const char *name)
+
+    # Sectino for PAPI functions related to events
+    int PAPI_query_event(int EventCode)                                       
+    int PAPI_query_named_event(const char *EventName)
+    int PAPI_enum_event(int *EventCode, int modifier)                           
+    int PAPI_event_code_to_name(int EventCode, char *out)                       
+    int PAPI_event_name_to_code(const char *in_, int *out)
+
+    # Section for PAPI functions related to error codes
+    char *PAPI_strerror(int) 
+
+    # Section for PAPI modifiers
+    ## Generic PAPI modifiers
+    cdef int _PAPI_ENUM_FIRST "PAPI_ENUM_FIRST"
+    cdef int _PAPI_ENUM_EVENTS "PAPI_ENUM_EVENTS"
+    cdef int _PAPI_ENUM_ALL "PAPI_ENUM_ALL"
+    ## Preset PAPI modifiers
+    cdef int _PAPI_PRESET_ENUM_AVAIL "PAPI_PRESET_ENUM_AVAIL"
+    ## Native PAPI modifiers
+    cdef int _PAPI_NTV_ENUM_UMASKS "PAPI_NTV_ENUM_UMASKS"
+    cdef int _PAPI_NTV_ENUM_UMASK_COMBOS "PAPI_NTV_ENUM_UMASK_COMBOS"
+
+    # Section related to PAPI structures
+    ## Functions that fill PAPI structures
+    int PAPI_get_event_info(int EventCode, PAPI_event_info_t * info)
+    const PAPI_component_info_t *PAPI_get_component_info(int cidx)
+    int PAPI_get_opt(int option, void *ptr)
+    ## Defined structures and member variables
     ctypedef struct PAPI_component_info_t:
-        char* name                # Name of the component we're using
-        char* short_name          # Short name of component, to be prepended to event names
-        char* description         # Description of the component
-        char* version             # Version of this component
-        char* support_version     # Version of the support library
-        char* kernel_version      # Version of the kernel PMC support driver
-        char* disabled_reason    # Reason for failure of initialization
+        char* name                                 # Name of the component we're using
+        char* short_name                           # Short name of component, to be prepended to event names
+        char* description                          # Description of the component
+        char* version                              # Version of this component
+        char* support_version                      # Version of the support library
+        char* kernel_version                       # Version of the kernel PMC support driver
+        char* disabled_reason                      # Reason for failure of initialization
         int disabled                               # 0 if enabled, otherwise error code from initialization
         int initialized                            # Component is ready to use
         int CmpIdx                                 # Index into the vector array for this component; set at init time
@@ -77,15 +133,6 @@ cdef extern from 'papi.h':
         unsigned int cpu                           # Supports specifying cpu number to use with eventset
         unsigned int inherit                       # Supports child processes inheriting parents counters
         unsigned int reserved_bits
-
-    const PAPI_component_info_t *PAPI_get_component_info(int cidx)
-
-    int PAPI_num_cmp_hwctrs(int cidx)
-    int PAPI_enum_event(int *EventCode, int modifier)
-    int PAPI_enum_cmp_event(int *EventCode, int modifier, int cidx)
-    int PAPI_event_code_to_name(int EventCode, char *out)
-    int PAPI_event_name_to_code(const char *in_, int *out)
-
     ctypedef struct PAPI_event_info_t:
         unsigned int event_code;    # Preset or Native event code
         char* symbol;               # Name of the event
@@ -107,26 +154,3 @@ cdef extern from 'papi.h':
         unsigned int code[12]       # Array of values that further describe the event
         char name[12][256]          # Names of code terms
         char *note                  # An optional developer note
-
-    int PAPI_get_event_info(int EventCode, PAPI_event_info_t * info)
-
-    cdef int PAPI_NULL
-    int PAPI_create_eventset(int *EventSet)
-    int PAPI_destroy_eventset(int *EventSet)
-    int PAPI_cleanup_eventset(int EventSet)
-    int PAPI_num_events(int EventSet)
-    int PAPI_assign_eventset_component(int EventSet, int cidx)
-    int PAPI_reset(int EventSet)
-    int PAPI_add_event(int EventSet, int Event)
-    int PAPI_add_named_event(int EventSet, const char *EventName)
-    int PAPI_start(int EventSet)
-    int PAPI_stop(int EventSet, long long * values)
-    int PAPI_read(int EventSet, long long * values)
-    int PAPI_read_ts(int EventSet, long long * values, long long *cyc)
-    int PAPI_accum(int EventSet, long long * values)
-    int PAPI_list_events(int EventSet, int *Events, int *number)
-    int PAPI_state(int EventSet, int *status)
-    int PAPI_write(int EventSet, long long * values)
-    int PAPI_get_eventset_component(int EventSet)
-    int PAPI_query_event(int EventCode)
-    int PAPI_query_named_event(const char *EventName)
