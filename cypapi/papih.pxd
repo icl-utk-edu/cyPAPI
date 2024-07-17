@@ -45,7 +45,7 @@ cdef extern from 'papi.h':
     int PAPI_cleanup_eventset(int EventSet)                                     
     int PAPI_destroy_eventset(int *EventSet)                                    
     int PAPI_state(int EventSet, int *status)
-    ## Getting eventset info                                     
+    ## Getting event set info                                     
     int PAPI_num_events(int EventSet)
     int PAPI_list_events(int EventSet, int *Events, int *number)
     ## Component related                
