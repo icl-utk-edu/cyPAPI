@@ -1,3 +1,4 @@
+# File contains declarations found in the header file papiStdEventDefs.h
 cdef extern from "papiStdEventDefs.h":
     # PAPI masks
     cdef int _PAPI_PRESET_MASK "PAPI_PRESET_MASK"

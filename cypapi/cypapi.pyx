@@ -10,7 +10,7 @@ cimport posix.dlfcn as dlfcn
 cdef void *libhndl = dlfcn.dlopen('libsde.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOBAL)
 
 from papih cimport *
-from papiStdEventDefh cimport *
+from papiStdEventDefsh cimport *
 
 # PAPI versioning
 PAPI_VER_CURRENT = _PAPI_VER_CURRENT
