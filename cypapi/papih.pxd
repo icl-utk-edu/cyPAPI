@@ -69,7 +69,7 @@ cdef extern from 'papi.h':
     int PAPI_enum_cmp_event(int *EventCode, int modifier, int cidx)
     int PAPI_get_component_index(const char *name)
 
-    # Sectino for PAPI functions related to events
+    # Section for PAPI functions related to events
     int PAPI_query_event(int EventCode)                                       
     int PAPI_query_named_event(const char *EventName)
     int PAPI_enum_event(int *EventCode, int modifier)                           

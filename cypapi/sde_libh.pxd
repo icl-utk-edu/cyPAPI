@@ -22,9 +22,8 @@ cdef extern from 'sde_lib.h':
 
     # Section related to creating counters
     ## Initialization and shutdown
-    ctypedef void* papi_handle_t
-    cdef void *papi_sde_init(const char *name_of_library)
     ctypedef void *papi_handle_t
+    cdef void *papi_sde_init(const char *name_of_library)
     cdef int papi_sde_shutdown(papi_handle_t handle)
     ## Register and unregister
     ctypedef long long int (*papi_sde_fptr_t)( void * );
