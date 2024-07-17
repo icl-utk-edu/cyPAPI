@@ -1,8 +1,11 @@
 # cython: language_level=3str
-cimport posix.dlfcn as dlfcn
-cdef void *libhndl = dlfcn.dlopen('libpapi.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOBAL)
-
 import struct
+
+cimport posix.dlfcn as dlfcn
+
+from cypapi.sde_libh cimport *
+
+cdef void *libhndl = dlfcn.dlopen('libpapi.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOBAL)
 
 def pack_float_i64(float value):
     """A utility function to pack the bits of a float value into an int."""
@@ -11,8 +14,6 @@ def pack_float_i64(float value):
 def unpack_i64_float(long long int value):
     """A utility to unpack the bits of a float packed into a long long int."""
     return struct.unpack('d', struct.pack('q', value))[0]
-
-from sde_libh cimport *
 
 SDE_RO = PAPI_SDE_RO
 SDE_INSTANT = PAPI_SDE_INSTANT
