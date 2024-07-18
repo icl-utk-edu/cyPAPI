@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# import necessary for script
+# imports necessary for script
 import torch
 
 import cypapi as cyp
