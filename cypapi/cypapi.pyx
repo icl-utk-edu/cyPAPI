@@ -1,7 +1,8 @@
 # cython: language_level=3str
-import numpy as np
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from dataclasses import dataclass, field, InitVar
+
+import numpy as np
 
 cimport numpy as np
 cimport posix.dlfcn as dlfcn

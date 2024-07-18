@@ -31,7 +31,7 @@ class CypapiEnotrun(Exception):
     """No events or event sets are currently not counting."""
 
 class CypapiEisrun(Exception):
-    """Event Set is currently running."""
+    """Event set is currently running."""
 
 class CypapiEnoevst(Exception):
     """No such event set available."""
@@ -61,10 +61,10 @@ class CypapiEnoimpl(Exception):
     """Not implemented."""
 
 class CypapiEbuf(Exception):
-    """Buffer size exceeded"""
+    """Buffer size exceeded."""
 
 class CypapiEinvalDom(Exception):
-    """EventSet domain is not uspported for the operation."""
+    """Event set domain is not uspported for the operation."""
 
 class CypapiEattr(Exception):
     """Invalid or missing event attributes."""

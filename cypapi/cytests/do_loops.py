@@ -1,3 +1,5 @@
+# File contains helper functions for cytests
+
 a, b = 0.5, 2.2
 
 def do_flops( n = 100 ):

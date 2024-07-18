@@ -52,5 +52,4 @@ setup(
     packages=['cypapi'],
     ext_modules = cythonize([ext_papi,ext_sde,ext_papi_thr]),
     install_requires = ['numpy'],
-    include_package_data=True,
 )
