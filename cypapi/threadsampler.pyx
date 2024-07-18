@@ -1,11 +1,15 @@
 # cython: language_level=3str
 import threading
+import warnings
+
+import numpy as np
+
+cimport numpy as np
 cimport posix.unistd as unistd
 from libc.stdlib cimport malloc, free, calloc, realloc
 from libc.stdio cimport printf
-import warnings
-import numpy as np
-cimport numpy as np
+
+from cypapi.cypapi_exceptions import _exceptions_for_cypapi
 
 cdef extern from 'papi.h' nogil:
     cdef int PAPI_OK
@@ -23,9 +27,9 @@ cdef unsigned long get_thread_id() noexcept nogil:
         return threading.get_native_id()
 
 def cyPAPI_thread_init():
-    cdef int papi_errno = PAPI_thread_init(get_thread_id)
-    if papi_errno != PAPI_OK:
-        raise Exception('PAPI Error: PAPI_thread_init failed')
+    cdef int retval = PAPI_thread_init(get_thread_id)
+    if retval != PAPI_OK:
+        raise _exceptions_for_cypapi[retval]
 
 cdef long int INIT_SIZE = 64
 
@@ -88,35 +92,35 @@ cdef class ThreadSamplerEventSet:
 
     cpdef run(self):
         cdef long long cyc = -1
-        cdef int papi_errno = PAPI_register_thread()
-        if papi_errno != PAPI_OK:
-            raise Exception('PAPI Error: PAPI_register thread failed.')
+        cdef int retval = PAPI_register_thread()
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
-        papi_errno = PAPI_start(self.evtset_id)
-        if papi_errno == PAPI_EISRUN:
+        retval = PAPI_start(self.evtset_id)
+        if retval == PAPI_EISRUN:
             warnings.warn('Event set is already running. Ignoring PAPI_start.')
-        elif papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_start failed.')
+        elif retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
         with nogil:
             while True:
                 if self.stop_event:
                     break
 
-                papi_errno = PAPI_read_ts(self.evtset_id, self.values, &cyc)
-                if papi_errno != PAPI_OK:
+                retval = PAPI_read_ts(self.evtset_id, self.values, &cyc)
+                if retval != PAPI_OK:
                     with gil:
-                        raise Exception(f'PAPI Error {papi_errno}: PAPI_read_ts failed.')
+                        raise _exceptions_for_cypapi[retval]
                 self.record(cyc, self.values)
                 unistd.usleep(self.interval_ms * 1000)
 
-        papi_errno = PAPI_stop(self.evtset_id, self.values)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_stop failed.')
+        retval = PAPI_stop(self.evtset_id, self.values)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
-        papi_errno = PAPI_unregister_thread()
-        if papi_errno != PAPI_OK:
-            raise Exception('PAPI Error: PAPI_unregister_thread failed.')
+        retval = PAPI_unregister_thread()
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def stop(self):
         self.stop_event = 1

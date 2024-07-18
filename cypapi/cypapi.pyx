@@ -1,16 +1,17 @@
 # cython: language_level=3str
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-import atexit
-import warnings
-import numpy as np
 from dataclasses import dataclass, field, InitVar
+
+import numpy as np
+
 cimport numpy as np
-
 cimport posix.dlfcn as dlfcn
-cdef void *libhndl = dlfcn.dlopen('libsde.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOBAL)
 
-from papih cimport *
-from papiStdEventDefsh cimport *
+from cypapi.cypapi_exceptions import _exceptions_for_cypapi
+from cypapi.papih cimport *
+from cypapi.papiStdEventDefsh cimport *
+
+cdef void *libhndl = dlfcn.dlopen('libsde.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOBAL)
 
 # PAPI versioning
 PAPI_VER_CURRENT = _PAPI_VER_CURRENT
@@ -132,8 +133,9 @@ PAPI_VEC_SP = _PAPI_VEC_SP
 PAPI_VEC_DP = _PAPI_VEC_DP 
 PAPI_REF_CYC = _PAPI_REF_CYC
 
-PAPI_MAX_INFO_TERMS = _PAPI_MAX_INFO_TERMS
-PAPI_PMU_MAX = _PAPI_PMU_MAX
+# importing native mask and preset mask
+PAPI_PRESET_MASK = _PAPI_PRESET_MASK
+PAPI_NATIVE_MASK = _PAPI_NATIVE_MASK
 
 # importing values for 'modifier' parameter for cyPAPI_enum_event
 PAPI_ENUM_FIRST = _PAPI_ENUM_FIRST
@@ -143,9 +145,9 @@ PAPI_PRESET_ENUM_AVAIL = _PAPI_PRESET_ENUM_AVAIL
 PAPI_NTV_ENUM_UMASKS = _PAPI_NTV_ENUM_UMASKS
 PAPI_NTV_ENUM_UMASK_COMBOS = _PAPI_NTV_ENUM_UMASK_COMBOS
 
-# importing native mask and preset mask
-PAPI_PRESET_MASK = _PAPI_PRESET_MASK
-PAPI_NATIVE_MASK = _PAPI_NATIVE_MASK
+# importing array lengths
+PAPI_MAX_INFO_TERMS = _PAPI_MAX_INFO_TERMS
+PAPI_PMU_MAX = _PAPI_PMU_MAX
 
 def cyPAPI_library_init(version):
     """Initialize cyPAPI library with linked PAPI build.
@@ -162,44 +164,78 @@ def cyPAPI_library_init(version):
     # check PAPI initialization was successful
     retval = PAPI_library_init(version)
     if retval != _PAPI_VER_CURRENT:
-        raise Exception( 'Failed initialization of cyPAPI. See if linked PAPI '
-                         'build was successfully installed.' )
+        raise _exceptions_for_cypapi[retval]
+
     return retval
 
 def cyPAPI_is_initialized():
     return PAPI_is_initialized()
 
-@atexit.register
 def cyPAPI_shutdown():
     PAPI_shutdown()
 
-def cyPAPI_strerror(int papi_errno):
-    cdef char* c_str = PAPI_strerror(papi_errno)
+def cyPAPI_strerror(int error_code):
+    cdef char *c_str = PAPI_strerror(error_code)
+    if not c_str:
+        raise ValueError('Failed to get error message.')
+
     return str(c_str, encoding='utf-8')
 
 def cyPAPI_num_components():
-    return PAPI_num_components()
+    cdef int retval = PAPI_num_components()
+    if retval < 0:
+        _exceptions_for_cypapi[retval]
+
+    return retval 
 
 def cyPAPI_get_component_index(str name):
-    return PAPI_get_component_index(name.encode('utf-8'))
+    cdef int retval = PAPI_get_component_index(name.encode('utf-8'))
+    if retval < 0:
+        raise _exceptions_for_cypapi[retval]
+
+    return retval
 
 def cyPAPI_get_real_cyc():
-    return PAPI_get_real_cyc()
+    cdef long long retval = PAPI_get_real_cyc()
+    if retval < 0:
+        raise _exceptions_for_cypapi[retval]
+
+    return retval
 
 def cyPAPI_get_real_nsec():
-    return PAPI_get_real_nsec()
+    cdef long long retval = PAPI_get_real_nsec()
+    if retval < 0:
+        raise _exceptions_for_cypapi[retval]
+
+    return retval
 
 def cyPAPI_get_real_usec():
-    return PAPI_get_real_usec()
+    cdef long long retval = PAPI_get_real_usec()
+    if retval < 0:
+        raise _exceptions_for_cypapi[retval]
+
+    return retval
 
 def cyPAPI_get_virt_cyc():
-    return PAPI_get_virt_cyc()
+    cdef long long retval = PAPI_get_virt_cyc()
+    if retval < 0:
+        raise _exceptions_for_cypapi[retval]
+
+    return retval
 
 def cyPAPI_get_virt_nsec():
-    return PAPI_get_virt_nsec()
+    cdef long long retval = PAPI_get_virt_nsec()
+    if retval < 0:
+        raise _exceptions_for_cypapi[retval]
+
+    return retval
 
 def cyPAPI_get_virt_usec():
-    return PAPI_get_virt_usec()
+    cdef long long retval = PAPI_get_virt_usec()
+    if retval < 0:
+        raise _exceptions_for_cypapi[retval]
+
+    return retval
 
 def cyPAPI_enum_event(EventCode, modifier):
     """Enumerate PAPI preset or native events.
@@ -221,7 +257,7 @@ def cyPAPI_enum_event(EventCode, modifier):
     int
         An event code.
     """
-    cdef int papi_errno = PAPI_OK
+    cdef int retval
     cdef int evt_code = np.array(EventCode).astype(np.intc)
     cdef int mod = np.array(modifier).astype(np.intc)
     hexcode = 0xffffffff
@@ -237,37 +273,33 @@ def cyPAPI_enum_event(EventCode, modifier):
 
     # case if PAPI_ENUM_FIRST modifier provided
     if mod == _PAPI_ENUM_FIRST:
-        papi_errno = PAPI_enum_event(&evt_code, mod)
-        if papi_errno != PAPI_OK:
-            raise Exception('Failed to enumerate first event.')
+        retval = PAPI_enum_event(&evt_code, mod)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
         evt_name = cyPAPI_event_code_to_name(evt_code)
         events[evt_name] = hex(evt_code & hexcode)
     # case if modifier other than PAPI_ENUM_FIRST_PROVIDED
     else:
         while True:
-            papi_errno = PAPI_enum_event(&evt_code, mod)
-             # fill dictionary
-            if papi_errno == PAPI_OK: 
+            retval = PAPI_enum_event(&evt_code, mod)
+             # add enumerated events to dictionary
+            if retval == PAPI_OK: 
                 evt_name = cyPAPI_event_code_to_name(evt_code) 
                 events[evt_name] = hex(evt_code & hexcode) 
-            # dictonary has finished being filled
-            elif papi_errno == PAPI_EINVAL or papi_errno == PAPI_ENOEVNT: 
-                break 
-            # provided EventCode not found
-            elif papi_errno == PAPI_ENOCMP: 
-                raise Exception('Component index is not set (PAPI_ENOCMP -17).')
-            # error uncounted for, function rework possibly needed
-            else: 
-                raise Exception('Internal error, please send mail to the'
-                                ' developers (PAPI_EBUG -6).')
+            # completed enumeration of events
+            elif retval == PAPI_EINVAL or retval == PAPI_ENOEVNT: 
+                break
+            # call to PAPI_enum_event failed
+            else:
+                raise _exceptions_for_cypapi[retval]
 
     return events, evt_code
 
 cdef void _PAPI_enum_cmp_event(int *EventCode, int modifier, int cidx) except *:
-    cdef int papi_errno = PAPI_enum_cmp_event(EventCode, modifier, cidx)
-    if papi_errno == PAPI_ENOCMP:
-        raise Exception(f'PAPI Error {papi_errno}: PAPI_enum_cmp_event failed.')
-    if papi_errno == PAPI_ENOEVNT or papi_errno == PAPI_EINVAL:
+    cdef int retval = PAPI_enum_cmp_event(EventCode, modifier, cidx)
+    if retval == PAPI_ENOCMP:
+        raise _exceptions_for_cypapi[retval]
+    if retval == PAPI_ENOEVNT or retval == PAPI_EINVAL:
         raise StopIteration
 
 cdef class CypapiEnumCmpEvent:
@@ -295,39 +327,41 @@ cdef class CypapiEnumCmpEvent:
         return self.next_event()
 
 def cyPAPI_query_event(event_code):
-    cdef int papi_errno, evt_code = np.array(event_code).astype(np.intc)
-    papi_errno = PAPI_query_event(evt_code)
+    cdef int retval
+    cdef int evt_code = np.array(event_code).astype(np.intc)
+    retval = PAPI_query_event(evt_code)
 
-    return papi_errno
+    return retval
 
 def cyPAPI_query_named_event(event_name):
-    cdef int papi_errno
+    cdef int retval
     cdef bytes evt_name = event_name.encode('utf8')
-    papi_errno = PAPI_query_named_event(evt_name)
+    retval = PAPI_query_named_event(evt_name)
 
-    return papi_errno
+    return retval
 
 def cyPAPI_num_cmp_hwctrs(int cidx):
-    return PAPI_num_cmp_hwctrs(cidx)
+    cdef int retval = PAPI_num_cmp_hwctrs(cidx)
+    if retval < 0:
+        raise _exceptions_for_cypapi[retval]
+    return retval
 
 def cyPAPI_event_code_to_name(event_code):
     # convert Python integer to Numpy value, which follows C overflow logic
-    cdef int papi_errno, evt_code = np.array(event_code).astype(np.intc)
+    cdef int retval, evt_code = np.array(event_code).astype(np.intc)
     cdef char out[1024]
-    papi_errno = PAPI_event_code_to_name(evt_code, out)
-    if papi_errno == PAPI_ENOMEM:
-        warnings.warn('PAPI has a bug getting event name from code')
-    elif papi_errno != PAPI_OK:
-        raise Exception(f'PAPI Error {papi_errno}: Failed to get event name from code')
+    retval = PAPI_event_code_to_name(evt_code, out)
+    if retval != PAPI_OK:
+        raise _exceptions_for_cypapi[retval]
     event_name = str(out, encoding='utf-8')
     return event_name
 
 def cyPAPI_event_name_to_code(str eventname):
     cdef bytes c_name = eventname.encode('utf-8')
     cdef int out = -1
-    cdef papi_errno = PAPI_event_name_to_code(c_name, &out)
-    if papi_errno != PAPI_OK:
-        raise Exception(f'PAPI Error {papi_errno}: Failed to get event code')
+    cdef int retval = PAPI_event_name_to_code(c_name, &out)
+    if retval != PAPI_OK:
+        raise _exceptions_for_cypapi[retval]
     return out
 
 @dataclass
@@ -459,8 +493,8 @@ class CypapiGetComponentInfo:
         valid_pmu_names = []
         cdef const PAPI_component_info_t *cmp_info = NULL
         cmp_info = PAPI_get_component_info(init_cmp_cidx)
-        if cmp_info == NULL:
-            raise Exception(f'Failed to get component info.')
+        if not cmp_info:
+            raise ValueError('Failed to get component info.')
 
         # parse pmu_names to avoid seg fault from NULL entries
         for idx in range(0, _PAPI_PMU_MAX):
@@ -584,12 +618,11 @@ class CypapiGetEventInfo:
     def __post_init__(self, init_evt_code):
         """Initialize attributes depending on PAPI_get_event_info call."""
         cdef PAPI_event_info_t info
-        cdef int papi_errno, evt_code = np.array(init_evt_code).astype(np.intc)
+        cdef int retval, evt_code = np.array(init_evt_code).astype(np.intc)
 
-        papi_errno = PAPI_get_event_info(evt_code, &info)
-        if papi_errno != PAPI_OK:
-            raise Exception( f'PAPI Error {papi_errno}: '
-                             'Failed to get event info.' )
+        retval = PAPI_get_event_info(evt_code, &info)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
         # assign post init attributes
         self.event_code = info.event_code
@@ -618,68 +651,70 @@ cdef class CypapiCreateEventset:
 
     def __cinit__(self):
         self.event_set = PAPI_NULL
-        cdef papi_errno = PAPI_create_eventset(&self.event_set)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI_Error {papi_errno}: Failed to create PAPI Event set.')
+        cdef int retval = PAPI_create_eventset(&self.event_set)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def __str__(self):
         return f'{self.event_set}'
 
     def cleanup_eventset(self):
-        cdef papi_errno = PAPI_cleanup_eventset(self.event_set)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI_Error {papi_errno}: Failed to cleanup eventset.')
+        cdef int retval = PAPI_cleanup_eventset(self.event_set)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def destroy_eventset(self):
-        cdef papi_errno
-        papi_errno = PAPI_destroy_eventset(&self.event_set)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI_Errno {papi_errno}: Failed to destroy eventset.')
+        cdef int retval = PAPI_destroy_eventset(&self.event_set)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def num_events(self):
-        return PAPI_num_events(self.event_set)
+        cdef int retval = PAPI_num_events(self.event_set)
+        if retval < 0:
+            raise _exceptions_for_cypapi[retval]
+        return retval
 
     def assign_eventset_component(self, int cidx):
-        cdef int papi_errno = PAPI_assign_eventset_component(self.event_set, cidx)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: Failed to assign component to eventset {self.event_set}')
+        cdef int retval = PAPI_assign_eventset_component(self.event_set, cidx)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def reset(self):
-        cdef int papi_errno = PAPI_reset(self.event_set)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: Failed to reset eventset {self.event_set}')
+        cdef int retval = PAPI_reset(self.event_set)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def add_event(self, event_code):
         # convert Python integer to Numpy value, which follows C overflow logic
-        cdef int papi_errno, evt_code = np.array(event_code).astype(np.intc)
-        papi_errno = PAPI_add_event(self.event_set, evt_code)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: Failed to add event.')
+        cdef int retval, evt_code = np.array(event_code).astype(np.intc)
+        retval = PAPI_add_event(self.event_set, evt_code)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def add_named_event(self, str name):
         cdef bytes c_name = name.encode('utf-8')
-        cdef int papi_errno = PAPI_add_named_event(self.event_set, c_name)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: Failed to add event {name} to eventset {self.event_set}')
+        cdef int retval = PAPI_add_named_event(self.event_set, c_name)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def start(self):
-        cdef int papi_errno = PAPI_start(self.event_set)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_start faled')
+        cdef int retval = PAPI_start(self.event_set)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def stop(self):
-        cdef int papi_errno
+        cdef int retval
          # memory allocation for array to be passed to PAPI function
         cdef long long *counter_vals = <long long *> PyMem_Malloc(
             self.num_events() * sizeof(long long) )
         if not counter_vals:
-            raise MemoryError('Failed to allocate long long array')
+            raise MemoryError('Failed to allocate memory for array')
         
         # handle PAPI function call
-        papi_errno = PAPI_stop(self.event_set, counter_vals)
-        if papi_errno != PAPI_OK:
+        retval = PAPI_stop(self.event_set, counter_vals)
+        if retval != PAPI_OK:
             PyMem_Free(counter_vals)
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_stop faled')
+            raise _exceptions_for_cypapi[retval]
 
         # try to convert array of counter values to list to be returned
         try:
@@ -689,18 +724,18 @@ cdef class CypapiCreateEventset:
             PyMem_Free(counter_vals)
 
     def read(self):
-        cdef int papi_errno
+        cdef int retval
         # memory allocation for array to be passed to PAPI function
         cdef long long *counter_vals = <long long *> PyMem_Malloc(
             self.num_events() * sizeof(long long) )
         if not counter_vals:
-            raise MemoryError('Failed to allocate long long array')
+            raise MemoryError('Failed to allocate memory for array')
         
         # handle PAPI function call
-        papi_errno = PAPI_read(self.event_set, counter_vals)
-        if papi_errno != PAPI_OK:
+        retval = PAPI_read(self.event_set, counter_vals)
+        if retval != PAPI_OK:
             PyMem_Free(counter_vals)
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_read failed')
+            raise _exceptions_for_cypapi[retval]
         
         # try to convert array of counter values to list to be returned
         try:
@@ -710,19 +745,19 @@ cdef class CypapiCreateEventset:
             PyMem_Free(counter_vals)
 
     def read_ts(self):
-        cdef int papi_errno
+        cdef int retval
         cdef long long cycles = -1
         # memory allocation for array to be passed to PAPI function
         cdef long long *counter_vals = <long long *> PyMem_Malloc(
             self.num_events() * sizeof(long long) )
         if not counter_vals:
-            raise Exception(f'Failed to allocate array')
+            raise MemoryError('Failed to allocate memory for array')
         
         # handle PAPI function call
-        papi_errno = PAPI_read_ts(self.event_set, counter_vals, &cycles)
-        if papi_errno != PAPI_OK:
+        retval = PAPI_read_ts(self.event_set, counter_vals, &cycles)
+        if retval != PAPI_OK:
             PyMem_Free(counter_vals)
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_read_ts failed')
+            raise _exceptions_for_cypapi[retval]
         
         # try to convert array of counter values to list to be returned
         try:
@@ -733,23 +768,24 @@ cdef class CypapiCreateEventset:
             PyMem_Free(counter_vals)
 
     def accum(self, list values):
-        cdef int papi_errno
+        cdef int retval
         # the list values must be initialized for accum
         if self.num_events() != len(values):
-            raise Exception("Length of values and number of added events don't match")
+            raise ValueError('Provided list must have the same length as the'
+                             ' number of events in the event set.')
         # memory allocation for array to be passed to PAPI function
         cdef long long *counter_vals= <long long *> PyMem_Malloc(
             self.num_events() * sizeof(long long) )
         if not counter_vals:
-            raise Exception(f'Failed to allocate array')
+            raise MemoryError('Failed to allocate memory for array')
 
         # handle PAPI function call
         for i in range(self.num_events()):
             counter_vals[i] = values[i]
-        papi_errno = PAPI_accum(self.event_set, counter_vals)
-        if papi_errno != PAPI_OK:
+        retval = PAPI_accum(self.event_set, counter_vals)
+        if retval != PAPI_OK:
             PyMem_Free(counter_vals)
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_accum failed')
+            raise _exceptions_for_cypapi[retval]
         
         # try to convert array of counter values to list to be returned
         try:
@@ -759,16 +795,16 @@ cdef class CypapiCreateEventset:
             PyMem_Free(counter_vals)
 
     def list_events(self, probe = False):
-        cdef int *evts, papi_errno, num_events = self.num_events()
+        cdef int *evts, retval, num_events = self.num_events()
         # does not probe EventSet
         if not probe:
             evts = <int *> PyMem_Malloc(num_events * sizeof(int))
             if not evts:
-                raise Exception('Failed to allocate array')
+                raise MemoryError('Failed to allocate memory for array.')
 
-            papi_errno = PAPI_list_events( self.event_set, evts, &num_events  )
-            if papi_errno != PAPI_OK:
-                raise Exception(f'PAPI Error {papi_errno}: PAPI_list_events failed.')
+            retval = PAPI_list_events( self.event_set, evts, &num_events  )
+            if retval != PAPI_OK:
+                raise _exceptions_for_cypapi[retval]
 
             # try to convert array of counter values to list to be returned
             try:
@@ -782,31 +818,30 @@ cdef class CypapiCreateEventset:
 
     def state(self):
         cdef int val = -1
-        cdef papi_errno = PAPI_state(self.event_set, &val)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_state failed.')
+        cdef int retval = PAPI_state(self.event_set, &val)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
         return val
 
     def write(self, list values):
-        cdef int papi_errno
+        cdef int retval
         cdef int num_events = self.num_events()
         if len(values) > num_events:
-            raise Exception('Too many values to write')
+            raise ValueError('Provided list must have the same length as the'
+                             ' number of events in the event set.')
         cdef long long *vals = <long long *> PyMem_Malloc(len(values))
         if not vals:
-            raise Exception('Failed to allocate array')
+            raise MemoryError('Failed to allocate memory for array.')
         cdef int i
         for i in range(len(values)):
             vals[i] = values[i]
-        papi_errno = PAPI_write(self.event_set, vals)
+        retval = PAPI_write(self.event_set, vals)
         PyMem_Free(vals)
-        if papi_errno != PAPI_OK:
-            raise Exception(f'PAPI Error {papi_errno}: PAPI_write failed')
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def get_eventset_component(self):
-        cdef int cid = PAPI_get_eventset_component(self.event_set)
-        if cid < 0:
-            raise Exception(f'PAPI Error {cid}: Failed to get eventset component index')
-        return cid
-
-del atexit, warnings
+        cdef int retval = PAPI_get_eventset_component(self.event_set)
+        if retval < 0:
+            raise _exceptions_for_cypapi[retval]
+        return retval

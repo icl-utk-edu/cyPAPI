@@ -1,8 +1,12 @@
 # cython: language_level=3str
-cimport posix.dlfcn as dlfcn
-cdef void *libhndl = dlfcn.dlopen('libpapi.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOBAL)
-
 import struct
+
+cimport posix.dlfcn as dlfcn
+
+from cypapi.cypapi_exceptions import _exceptions_for_cypapi
+from cypapi.sde_libh cimport *
+
+cdef void *libhndl = dlfcn.dlopen('libpapi.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOBAL)
 
 def pack_float_i64(float value):
     """A utility function to pack the bits of a float value into an int."""
@@ -11,8 +15,6 @@ def pack_float_i64(float value):
 def unpack_i64_float(long long int value):
     """A utility to unpack the bits of a float packed into a long long int."""
     return struct.unpack('d', struct.pack('q', value))[0]
-
-from sde_libh cimport *
 
 SDE_RO = PAPI_SDE_RO
 SDE_INSTANT = PAPI_SDE_INSTANT
@@ -57,7 +59,7 @@ class SdeCounter:
         elif issubclass(cntr_type, float):
             _type = PAPI_SDE_double
         else:
-            raise Exception("Unsupported type of counter requested.")
+            raise ValueError('Invalid counter type requested.')
 
         self._counter = _cSdeCounter(cntr_mode, _type, init)
 
@@ -85,7 +87,7 @@ class SdeCounterCB:
         elif issubclass(cntr_type, float):
             _type = PAPI_SDE_double
         else:
-            raise Exception("SDE Error: Unsupported type of counter requested.")
+            raise ValueError('Invalid counter type requested.')
         
         self._counter = _cSdeCounter(cntr_mode, _type)
         self._pyfunc = func
@@ -99,15 +101,15 @@ cdef class _cSdeHandle:
         self.handle = papi_sde_init(<const char *> self.library_name_cstr)
 
         if self.handle is NULL:
-            raise Exception('SDE Error: Failed to initialize')
+            raise MemoryError('Failed to initialize SDE internal data-structures.')
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{str(self.library_name_cstr, encoding='utf-8')}')"
 
     def shutdown(self):
-        cdef int sde_err = papi_sde_shutdown(self.handle)
-        if sde_err != SDE_OK:
-            raise Exception('SDE Error: papi_sde_shutdown failed.')
+        cdef int retval = papi_sde_shutdown(self.handle)
+        if retval != SDE_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def register_counter(self, str event_name, _cSdeCounter counter):
         cdef void* pctr
@@ -117,44 +119,44 @@ cdef class _cSdeHandle:
         else:
             pctr = <void *> &counter.d_counter
 
-        cdef int sde_err = papi_sde_register_counter(
+        cdef int retval = papi_sde_register_counter(
             self.handle, <const char *> evt_name,
             counter.cntr_mode, counter.cntr_type, pctr
             )
-        if sde_err != SDE_OK:
-            raise Exception('SDE Error: papi_sde_register_counter failed.')
+        if retval != SDE_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def register_counter_cb(self, str event_name, _cSdeCounter counter, py_func):
         cdef bytes evt_name = event_name.encode('utf-8')
-        cdef int sde_err = papi_sde_register_counter_cb(
+        cdef int retval = papi_sde_register_counter_cb(
             self.handle, <const char *> evt_name,
             counter.cntr_mode, counter.cntr_type,
             cb_caller, <void *> py_func
         )
-        if sde_err != SDE_OK:
-            raise Exception('SDE Error: papi_sde_register_counter_cb failed.')
+        if retval != SDE_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def describe_counter(self, str event_name, str description):
         cdef bytes evt_name = event_name.encode('utf-8')
         cdef bytes descr = description.encode('utf-8')
-        cdef int sde_err = papi_sde_describe_counter(self.handle, <const char*> evt_name, <const char*> descr)
-        if sde_err != SDE_OK:
-            raise Exception('SDE Error: papi_sde_describe_counter failed')
+        cdef int retval = papi_sde_describe_counter(self.handle, <const char*> evt_name, <const char*> descr)
+        if retval != SDE_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def unregister_counter(self, str event_name):
         cdef bytes evt_name = event_name.encode('utf-8')
-        cdef int sde_err = papi_sde_unregister_counter(self.handle, <const char *> evt_name)
-        if sde_err != SDE_OK:
-            raise Exception('SDE Error: papi_sde_unregister_counter failed')
+        cdef int retval = papi_sde_unregister_counter(self.handle, <const char *> evt_name)
+        if retval != SDE_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def add_counter_to_group(self, str event_name, str group_name, int group_flag):
         cdef bytes evt_name = event_name.encode('utf-8')
         cdef bytes grp_name = group_name.encode('utf-8')
         if group_flag not in (PAPI_SDE_SUM, PAPI_SDE_MAX, PAPI_SDE_MIN):
-            raise Exception('SDE Error: Bad argument for group_flag')
-        cdef int sde_err = papi_sde_add_counter_to_group(self.handle, <const char*> evt_name, <const char *> grp_name, group_flag)
-        if sde_err != SDE_OK:
-            raise Exception('SDE_Error: papi_sde_add_counter_to_group failed')
+            raise ValueError('Invalid group flag provided.')
+        cdef int retval = papi_sde_add_counter_to_group(self.handle, <const char*> evt_name, <const char *> grp_name, group_flag)
+        if retval != SDE_OK:
+            raise _exceptions_for_cypapi[retval]
 
     def get_counter_handle(self, str event_name):
         cdef bytes evt_name = event_name.encode('utf-8')

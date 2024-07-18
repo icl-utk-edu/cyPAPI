@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# File contains helper functions for cytests
 
 a, b = 0.5, 2.2
 
