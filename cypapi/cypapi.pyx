@@ -1,6 +1,7 @@
 # cython: language_level=3str
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from dataclasses import dataclass, field, InitVar
+from collections.abc import Iterator
 from typing import Union
 
 import numpy as np
@@ -176,7 +177,7 @@ def cyPAPI_is_initialized() -> int:
 def cyPAPI_shutdown() -> None:
     PAPI_shutdown()
 
-def cyPAPI_strerror(error_code: int) ->str:
+def cyPAPI_strerror(error_code: int) -> str:
     cdef char *c_str = PAPI_strerror(error_code)
     if not c_str:
         raise ValueError('Failed to get error message.')
