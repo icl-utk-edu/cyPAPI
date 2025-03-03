@@ -27,6 +27,12 @@ def configure_extension(ext: Extension, papi_path: str):
     ext.library_dirs.append(papi_lib)
     ext.runtime_library_dirs.append(papi_lib)
 
+def get_cuda_presets_path(papi_path: str):
+    subpath_to_cuda_cmp = "src/components/cuda"
+    path_to_papi_framework, _ = papi_path.split("/src/")
+
+    return os.path.join(path_to_papi_framework, subpath_to_cuda_cmp)
+
 if os.name == 'nt':
     raise NotImplementedError('cypapi does not currently support Windows OS')
 
@@ -47,9 +53,14 @@ if papi_path:
     configure_extension(ext_sde, papi_path)
     configure_extension(ext_papi_thr, papi_path)
 
+    fullpath_to_cuda_cmp = get_cuda_presets_path(papi_path)
+
+
+
 setup(
     name='cypapi',
     packages=['cypapi'],
     ext_modules = cythonize([ext_papi,ext_sde,ext_papi_thr]),
     install_requires = ['numpy'],
+    include_dirs=[fullpath_to_cuda_cmp]
 )
