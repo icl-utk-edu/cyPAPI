@@ -280,14 +280,15 @@ def cyPAPI_enum_event(event_code: int, modifier: int) -> tuple[dict[str, str], i
 
     # check if a valid modifier has been provided
     valid_modifiers = [ _PAPI_ENUM_FIRST, _PAPI_ENUM_EVENTS, _PAPI_ENUM_ALL,
-                        _PAPI_PRESET_ENUM_AVAIL, _PAPI_NTV_ENUM_UMASKS,
-                        _PAPI_NTV_ENUM_UMASK_COMBOS]
+                        _PAPI_PRESET_ENUM_AVAIL, _PAPI_PRESET_ENUM_CPU,
+                        _PAPI_PRESET_ENUM_CPU_AVAIL, _PAPI_PRESET_ENUM_FIRST_COMP,
+                        _PAPI_NTV_ENUM_UMASKS, _PAPI_NTV_ENUM_UMASK_COMBOS]
     if modifier not in valid_modifiers:
         raise ValueError( 'Modifier value not supported. Run '
                           'help(cyPAPI_enum_event) to see available modifiers.')
 
     # case if PAPI_ENUM_FIRST modifier provided
-    if mod == _PAPI_ENUM_FIRST:
+    if mod == _PAPI_ENUM_FIRST or _PAPI_PRESET_ENUM_FIRST_COMP:
         retval = PAPI_enum_event(&evt_code, mod)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
