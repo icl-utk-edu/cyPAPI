@@ -798,7 +798,8 @@ cdef class CypapiCreateEventset:
             PyMem_Free(counter_vals)
 
     def list_events(self, probe: bool = False) -> Union[list[int], int]:
-        cdef int *evts, retval, num_events = self.num_events()
+        cdef int *evts
+        cdef int retval, num_events = self.num_events()
         # does not probe EventSet
         if not probe:
             evts = <int *> PyMem_Malloc(num_events * sizeof(int))
