@@ -706,6 +706,12 @@ cdef class CypapiCreateEventset:
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
+    def remove_named_event(self, event_name: str) -> None:
+        cdef bytes c_string_event_name = event_name.encode('utf-8')
+        cdef int retval = PAPI_remove_named_event(self.event_set, c_string_event_name)
+        if retval != PAPI_OK:
+            raise _exceptions_for_cypapi[retval]
+
     def start(self) -> None:
         cdef int retval = PAPI_start(self.event_set)
         if retval != PAPI_OK:

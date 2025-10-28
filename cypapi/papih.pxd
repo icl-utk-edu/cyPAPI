@@ -57,6 +57,7 @@ cdef extern from 'papi.h':
     int PAPI_add_named_event(int EventSet, const char *EventName)
     ## Removing events
     int PAPI_remove_event(int EventSet, int EventCode)
+    int PAPI_remove_named_event(int EventSet, const char *EventName)
     ## Counting hardware events               
     int PAPI_start(int EventSet)                                                
     int PAPI_stop(int EventSet, long long * values)                             
