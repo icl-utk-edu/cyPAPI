@@ -1,2 +1,2 @@
 clean:
-	rm -rf *.so *.html cypapi.c cysdelib.c threadsampler.c
+	rm -rf *.so *.html cypapi.c threadsampler.c
