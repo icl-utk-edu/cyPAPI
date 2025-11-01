@@ -14,8 +14,6 @@ from cypapi.cypapi_exceptions import _exceptions_for_cypapi
 from cypapi.papih cimport *
 from cypapi.papiStdEventDefsh cimport *
 
-cdef void *libhndl = dlfcn.dlopen('libsde.so', dlfcn.RTLD_LAZY | dlfcn.RTLD_GLOBAL)
-
 # PAPI versioning
 PAPI_VER_CURRENT = _PAPI_VER_CURRENT
 PAPI_VERSION = _PAPI_VERSION
