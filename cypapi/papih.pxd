@@ -80,7 +80,15 @@ cdef extern from 'papi.h':
     int PAPI_event_name_to_code(const char *in_, int *out)
 
     # Section for PAPI functions related to error codes
-    char *PAPI_strerror(int) 
+    char *PAPI_strerror(int)
+
+    # Section for PAPI functions related to thread support
+    int PAPI_thread_init(unsigned long int (*id_fn) ())
+    int PAPI_register_thread()
+    int PAPI_unregister_thread()
+    unsigned long PAPI_thread_id()
+    ctypedef unsigned long PAPI_thread_id_t
+    int PAPI_list_threads(PAPI_thread_id_t *tids, int *number)
 
     # Section for PAPI modifiers
     ## Generic PAPI modifiers
