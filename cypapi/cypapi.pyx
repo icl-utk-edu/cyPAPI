@@ -11,8 +11,8 @@ cimport numpy as np
 cimport posix.dlfcn as dlfcn
 
 from cypapi.cypapi_exceptions import _exceptions_for_cypapi
-from cypapi.papih cimport *
-from cypapi.papiStdEventDefsh cimport *
+from cypapi.papi cimport *
+from cypapi.papiStdEventDefs cimport *
 
 # PAPI versioning
 PAPI_VER_CURRENT = _PAPI_VER_CURRENT
