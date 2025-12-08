@@ -2,7 +2,7 @@
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from dataclasses import dataclass, field, InitVar
 from collections.abc import Iterator
-from typing import Union
+from typing import Union, Callable
 
 import numpy as np
 import cython
@@ -364,6 +364,80 @@ def cyPAPI_event_name_to_code(event_name: str) -> int:
     if retval != PAPI_OK:
         raise _exceptions_for_cypapi[retval]
     return out
+
+cdef object _user_thread_defined_callback = None
+cdef unsigned long _convert_user_defined_callback() noexcept:
+    """Internal function to convert Python callable to C callable
+    for cyPAPI_thread_init."""
+    return _user_thread_defined_callback()
+
+def cyPAPI_thread_init(thread_defined_callback: Callable) -> None:
+    """Initialize thread support in cyPAPI.
+
+    :param thread_id_callback: A callback function that returns the current thread id.
+    """
+    global _user_thread_defined_callback
+    if _user_thread_defined_callback is not None:
+        raise RuntimeError("Callback already defined.")
+    else:
+        _user_thread_defined_callback = thread_defined_callback
+
+    cdef int retval = PAPI_thread_init(_convert_user_defined_callback)
+    if retval != PAPI_OK:
+        raise _exceptions_for_cypapi[retval]
+
+def cyPAPI_register_thread() -> None:
+    """Notify cyPAPI that a thread has 'appeared'."""
+    cdef int retval = PAPI_register_thread()
+    if retval != PAPI_OK:
+        raise _exceptions_for_cypapi[retval]
+
+def cyPAPI_unregister_thread() -> None:
+    """Notify cyPAPI that a thread has 'disappeared'."""
+    cdef int retval = PAPI_unregister_thread()
+    if retval != PAPI_OK:
+        raise _exceptions_for_cypapi[retval]
+
+def cyPAPI_thread_id() -> str:
+    """Get the thread identifier of the current thread.
+
+    :returns: Current thread id as hex.
+    :rtype: str
+    """
+    cdef unsigned long retval = PAPI_thread_id();
+    # Convert to an int to check for negative return values
+    if <int> retval < 0:
+        raise _exceptions_for_cypapi[<int> retval]
+
+    return hex(retval)
+
+def cyPAPI_list_threads() -> tuple(int, list[str]):
+    """Get the total number of thread ids and a list of the registered thread ids.
+
+    :returns: A tuple with the total number of thread ids in index 0
+              and the list of thread ids in index 1.
+    :rtype: tuple
+    """
+    cdef int number_of_threads
+    cdef int retval = PAPI_list_threads(NULL, &number_of_threads)
+    if retval != PAPI_OK:
+        raise _exceptions_for_cypapi[retval]
+
+    cdef PAPI_thread_id_t *array_of_thread_ids = <PAPI_thread_id_t *> PyMem_Malloc(number_of_threads * sizeof(PAPI_thread_id_t))
+    if not array_of_thread_ids:
+        raise MemoryError("Failed to allocate memory for array_of_thread_ids.")
+
+    retval = PAPI_list_threads(array_of_thread_ids, &number_of_threads)
+    if retval != PAPI_OK:
+        PyMem_Free(array_of_thread_ids)
+        raise _exceptions_for_cypapi[retval]
+
+    try:
+        list_of_thread_ids = [hex(array_of_thread_ids[i]) for i in range( 0, number_of_threads )]
+    finally:
+        PyMem_Free(array_of_thread_ids)
+
+    return number_of_threads, list_of_thread_ids
 
 @dataclass
 class CypapiGetComponentInfo:
