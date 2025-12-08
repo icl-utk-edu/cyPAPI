@@ -13,6 +13,7 @@ cimport posix.dlfcn as dlfcn
 from cypapi.cypapi_exceptions import _exceptions_for_cypapi
 from cypapi.papi cimport *
 from cypapi.papiStdEventDefs cimport *
+from cypapi.papiCudaStdEventDefs cimport *
 
 # PAPI versioning
 PAPI_VER_CURRENT = _PAPI_VER_CURRENT
@@ -134,6 +135,14 @@ PAPI_VEC_SP = _PAPI_VEC_SP
 PAPI_VEC_DP = _PAPI_VEC_DP 
 PAPI_REF_CYC = _PAPI_REF_CYC
 
+# importing Cuda GPU preset defines to be used in cyPAPI
+PAPI_CUDA_FP16_FMA = _PAPI_CUDA_FP16_FMA
+PAPI_CUDA_BF16_FMA = _PAPI_CUDA_BF16_FMA
+PAPI_CUDA_FP32_FMA = _PAPI_CUDA_FP32_FMA
+PAPI_CUDA_FP64_FMA = _PAPI_CUDA_FP64_FMA
+PAPI_CUDA_FP_FMA   = _PAPI_CUDA_FP_FMA
+PAPI_CUDA_FP8_OPS  = _PAPI_CUDA_FP8_OPS
+
 # importing native mask and preset mask
 PAPI_PRESET_MASK = _PAPI_PRESET_MASK
 PAPI_NATIVE_MASK = _PAPI_NATIVE_MASK
@@ -143,6 +152,9 @@ PAPI_ENUM_FIRST = _PAPI_ENUM_FIRST
 PAPI_ENUM_EVENTS = _PAPI_ENUM_EVENTS
 PAPI_ENUM_ALL = _PAPI_ENUM_ALL
 PAPI_PRESET_ENUM_AVAIL = _PAPI_PRESET_ENUM_AVAIL
+PAPI_PRESET_ENUM_FIRST_COMP = _PAPI_PRESET_ENUM_FIRST_COMP
+PAPI_PRESET_ENUM_CPU = _PAPI_PRESET_ENUM_CPU
+PAPI_PRESET_ENUM_CPU_AVAIL = _PAPI_PRESET_ENUM_CPU_AVAIL
 PAPI_NTV_ENUM_UMASKS = _PAPI_NTV_ENUM_UMASKS
 PAPI_NTV_ENUM_UMASK_COMBOS = _PAPI_NTV_ENUM_UMASK_COMBOS
 
@@ -266,14 +278,15 @@ def cyPAPI_enum_event(event_code: int, modifier: int) -> tuple[dict[str, str], i
 
     # check if a valid modifier has been provided
     valid_modifiers = [ _PAPI_ENUM_FIRST, _PAPI_ENUM_EVENTS, _PAPI_ENUM_ALL,
-                        _PAPI_PRESET_ENUM_AVAIL, _PAPI_NTV_ENUM_UMASKS,
-                        _PAPI_NTV_ENUM_UMASK_COMBOS]
+                        _PAPI_PRESET_ENUM_AVAIL, _PAPI_PRESET_ENUM_CPU,
+                        _PAPI_PRESET_ENUM_CPU_AVAIL, _PAPI_PRESET_ENUM_FIRST_COMP,
+                        _PAPI_NTV_ENUM_UMASKS, _PAPI_NTV_ENUM_UMASK_COMBOS]
     if modifier not in valid_modifiers:
         raise ValueError( 'Modifier value not supported. Run '
                           'help(cyPAPI_enum_event) to see available modifiers.')
 
     # case if PAPI_ENUM_FIRST modifier provided
-    if mod == _PAPI_ENUM_FIRST:
+    if mod == _PAPI_ENUM_FIRST or _PAPI_PRESET_ENUM_FIRST_COMP:
         retval = PAPI_enum_event(&evt_code, mod)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
