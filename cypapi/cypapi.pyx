@@ -13,7 +13,8 @@ cimport posix.dlfcn as dlfcn
 from cypapi.cypapi_exceptions import _exceptions_for_cypapi
 from cypapi.papi cimport *
 from cypapi.papiStdEventDefs cimport *
-from cypapi.papiCudaStdEventDefs cimport *
+if CUDA_COMPILED_IN:
+    from cypapi.papiCudaStdEventDefs cimport *
 
 # PAPI versioning
 PAPI_VER_CURRENT = _PAPI_VER_CURRENT
@@ -136,12 +137,13 @@ PAPI_VEC_DP = _PAPI_VEC_DP
 PAPI_REF_CYC = _PAPI_REF_CYC
 
 # importing Cuda GPU preset defines to be used in cyPAPI
-PAPI_CUDA_FP16_FMA = _PAPI_CUDA_FP16_FMA
-PAPI_CUDA_BF16_FMA = _PAPI_CUDA_BF16_FMA
-PAPI_CUDA_FP32_FMA = _PAPI_CUDA_FP32_FMA
-PAPI_CUDA_FP64_FMA = _PAPI_CUDA_FP64_FMA
-PAPI_CUDA_FP_FMA   = _PAPI_CUDA_FP_FMA
-PAPI_CUDA_FP8_OPS  = _PAPI_CUDA_FP8_OPS
+if CUDA_COMPILED_IN:
+    PAPI_CUDA_FP16_FMA = _PAPI_CUDA_FP16_FMA
+    PAPI_CUDA_BF16_FMA = _PAPI_CUDA_BF16_FMA
+    PAPI_CUDA_FP32_FMA = _PAPI_CUDA_FP32_FMA
+    PAPI_CUDA_FP64_FMA = _PAPI_CUDA_FP64_FMA
+    PAPI_CUDA_FP_FMA   = _PAPI_CUDA_FP_FMA
+    PAPI_CUDA_FP8_OPS  = _PAPI_CUDA_FP8_OPS
 
 # importing native mask and preset mask
 PAPI_PRESET_MASK = _PAPI_PRESET_MASK

@@ -1,6 +1,6 @@
 from setuptools import setup, Extension
 from Cython.Build import cythonize
-import os
+import os, subprocess
 import numpy
 
 def get_papi_path_pkg_config():
@@ -43,9 +43,21 @@ if not papi_path:
 if papi_path:
     configure_extension(ext_papi, papi_path)
 
+internal_compile_time_envs = {}
+cuda_compiled_in_command = f"{papi_path}/bin/papi_component_avail | sed -n '/Compiled-in components:/,/Active components:/p' | grep 'Name:   cuda'"
+# Check to see if the cuda component was compiled in
+try:
+    completed_process = subprocess.run(cuda_compiled_in_command, shell = True, check = True, capture_output = True)
+# Cuda component was not compiled into PAPI
+except subprocess.CalledProcessError:
+    internal_compile_time_envs["CUDA_COMPILED_IN"] = False
+# Cuda component was compiled into PAPI
+else:
+    internal_compile_time_envs["CUDA_COMPILED_IN"] = True
+
 setup(
     name='cypapi',
     packages=['cypapi'],
-    ext_modules = cythonize([ext_papi]),
+    ext_modules = cythonize([ext_papi], compile_time_env = internal_compile_time_envs),
     install_requires = ['numpy'],
 )
