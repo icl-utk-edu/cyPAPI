@@ -165,13 +165,13 @@ PAPI_MAX_INFO_TERMS = _PAPI_MAX_INFO_TERMS
 PAPI_PMU_MAX = _PAPI_PMU_MAX
 
 def cyPAPI_library_init(version: int) -> int:
-    """Initialize cyPAPI library with linked PAPI build.
+    """Initialize the cyPAPI library with a linked PAPI build.
 
-    Parameters
-    __________
-    version : int
-        Value of PAPI_VER_CURRENT.
-    """
+    :param version: Value of PAPI_VER_CURRENT
+    :type version: int
+    :returns: PAPI_VER_CURRENT
+    :rtype: int
+    """ 
     cdef int retval
     # check correct version is provided
     if version != _PAPI_VER_CURRENT:
@@ -184,12 +184,25 @@ def cyPAPI_library_init(version: int) -> int:
     return retval
 
 def cyPAPI_is_initialized() -> int:
+    """Check if cyPAPI is or is not initialized.
+
+    :returns: Status of the cyPAPI library
+    :rtype: int 
+    """
     return PAPI_is_initialized()
 
 def cyPAPI_shutdown() -> None:
+    """Finish using cyPAPI and free all related resources."""
     PAPI_shutdown()
 
 def cyPAPI_strerror(error_code: int) -> str:
+    """Convert an error code to its corresponding error message.
+
+    :param error_code: A PAPI error code
+    :type error_code: int
+    :returns: An error messsage corresponding to the provided error code
+    :rtype: str
+    """
     cdef char *c_str = PAPI_strerror(error_code)
     if not c_str:
         raise ValueError('Failed to get error message.')
@@ -197,6 +210,11 @@ def cyPAPI_strerror(error_code: int) -> str:
     return str(c_str, encoding='utf-8')
 
 def cyPAPI_num_components() -> int:
+    """Get the number of components available on the system.
+
+    :returns: The number of components available on the system.
+    :rtype: int
+    """
     cdef int retval = PAPI_num_components()
     if retval < 0:
         _exceptions_for_cypapi[retval]
@@ -204,6 +222,13 @@ def cyPAPI_num_components() -> int:
     return retval 
 
 def cyPAPI_get_component_index(name: str) -> int:
+    """Get the component index for the named component.
+
+    :param name:
+    :type name: str
+    :returns: A component index
+    :rtype: int
+    """
     cdef int retval = PAPI_get_component_index(name.encode('utf-8'))
     if retval < 0:
         raise _exceptions_for_cypapi[retval]
@@ -211,6 +236,12 @@ def cyPAPI_get_component_index(name: str) -> int:
     return retval
 
 def cyPAPI_get_real_cyc() -> int:
+    """Get a real time counter value in clock cycles.
+    This call is equivalent to wall clock time.
+
+    :returns: The total real time passed since some arbitrary starting point in clock cycles
+    :rtype: int
+    """
     cdef long long retval = PAPI_get_real_cyc()
     if retval < 0:
         raise _exceptions_for_cypapi[retval]
@@ -218,6 +249,12 @@ def cyPAPI_get_real_cyc() -> int:
     return retval
 
 def cyPAPI_get_real_nsec() -> int:
+    """Get a real time counter value in nanoseconds.
+    This call is equivalent to wall clock time.
+
+    :returns: The total real time passed since some arbitrary starting point in nanoseconds
+    :rtype: int
+    """
     cdef long long retval = PAPI_get_real_nsec()
     if retval < 0:
         raise _exceptions_for_cypapi[retval]
@@ -225,6 +262,12 @@ def cyPAPI_get_real_nsec() -> int:
     return retval
 
 def cyPAPI_get_real_usec() -> int:
+    """Get a real time counter value in microseconds.
+    This call is equivalent to wall clock time.
+
+    :returns: The total real time passed since some arbitrary starting point in microseconds
+    :rtype: int
+    """
     cdef long long retval = PAPI_get_real_usec()
     if retval < 0:
         raise _exceptions_for_cypapi[retval]
@@ -232,6 +275,11 @@ def cyPAPI_get_real_usec() -> int:
     return retval
 
 def cyPAPI_get_virt_cyc() -> int:
+    """Get a virtual time counter value in clock cycles.
+
+    :returns: The total number of virtual units from some arbitrary starting point in clock cycles
+    :rtype: int
+    """
     cdef long long retval = PAPI_get_virt_cyc()
     if retval < 0:
         raise _exceptions_for_cypapi[retval]
@@ -239,6 +287,11 @@ def cyPAPI_get_virt_cyc() -> int:
     return retval
 
 def cyPAPI_get_virt_nsec() -> int:
+    """Get a virtual time counter value in nanoseconds.
+
+    :returns: The total number of virtual units from some arbitrary starting point in nanoseconds
+    :rtype: int
+    """
     cdef long long retval = PAPI_get_virt_nsec()
     if retval < 0:
         raise _exceptions_for_cypapi[retval]
@@ -246,6 +299,11 @@ def cyPAPI_get_virt_nsec() -> int:
     return retval
 
 def cyPAPI_get_virt_usec() -> int:
+    """Get a virtual time counter value in microseconds.
+
+    :returns: The total number of virtual units from some arbitrary starting point in microseconds
+    :rtype: int
+    """
     cdef long long retval = PAPI_get_virt_usec()
     if retval < 0:
         raise _exceptions_for_cypapi[retval]
@@ -254,23 +312,16 @@ def cyPAPI_get_virt_usec() -> int:
 
 def cyPAPI_enum_event(event_code: int, modifier: int) -> tuple[dict[str, str], int]:
     """Enumerate PAPI preset or native events.
-    
-    Parameters
-    __________
-    EventCode : int
-        A defined preset or native event such as PAPI_TOT_INS.
-    modifier : int
-        Modifies the search logic. Options to use include: PAPI_ENUM_FIRST,
-        PAPI_ENUM_EVENTS, PAPI_ENUM_ALL, PAPI_NTV_ENUM_UMASKS,
-        PAPI_NTV_ENUM_UMASK_COMBOS, and PAPI_PRESET_ENUM_AVAIL.
 
-    Returns
-    _______
-    dict
-        A dictionary containing the event names as keys and the event codes in 
-        hex as values.
-    int
-        An event code.
+    :param event_code: A defined preset or native event such as PAPI_TOT_INS
+    :type event_code: int
+    :param modifier: Modifies the search logic. Options to use include: PAPI_ENUM_FIRST,
+                     PAPI_ENUM_EVENTS, PAPI_ENUM_ALL, PAPI_NTV_ENUM_UMASKS, PAPI_NTV_ENUM_UMASK_COMBOS,
+                     and PAPI_PRESET_ENUM_AVAIL.
+    :type modifier: int
+    :returns: A tuple which contains a dictionary with the event names as keys and the event codes in hex
+              as values and a new event code
+    :rtype: tuple
     """
     cdef int retval
     cdef int evt_code = np.array(event_code).astype(np.intc)
@@ -312,6 +363,15 @@ def cyPAPI_enum_event(event_code: int, modifier: int) -> tuple[dict[str, str], i
     return events, evt_code
 
 cdef void _PAPI_enum_cmp_event(EventCode: cython.p_int, modifier: int, cidx: int) except *:
+    """Internal function that calls PAPI_enum_cmp_event.
+
+    :param EventCode: An event code
+    :type EventCode: int
+    :param modifier: A modifier to change the search logic such as PAPI_ENUM_FIRST
+    :type modifier: int
+    :param cidx: The component's index
+    :type cidx: int
+    """
     cdef int retval = PAPI_enum_cmp_event(EventCode, modifier, cidx)
     if retval == PAPI_ENOCMP:
         raise _exceptions_for_cypapi[retval]
@@ -324,11 +384,21 @@ cdef class CypapiEnumCmpEvent:
     cdef int modifier
 
     def __cinit__(self, cidx: int) -> None:
+        """Initialize a CypapiEnumCmpEvent object.
+
+        :param cidx: Component index to enumerate events for
+        :type cidx: int
+        """
         self.cidx = cidx
         self.modifier = PAPI_ENUM_FIRST
         self.ntv_code = 0 | _PAPI_NATIVE_MASK
     
     def next_event(self) -> int:
+        """Move to the next event.
+
+        :returns: The next event code
+        :rtype: int
+        """
         if self.modifier == PAPI_ENUM_FIRST:
             _PAPI_enum_cmp_event(&self.ntv_code, PAPI_ENUM_FIRST, self.cidx)
             self.modifier = PAPI_ENUM_EVENTS
@@ -337,12 +407,29 @@ cdef class CypapiEnumCmpEvent:
         return self.ntv_code
 
     def __iter__(self) -> Iterator[int]:
+        """Returns the iterator object for CypapiEnumCmpEvent.
+
+        :returns: Iterator object
+        :rtype: Iterator[int]
+        """
         return self
 
     def __next__(self) -> int:
+        """Iterates the next item in the sequence or raises StopIteration if we have hit the end.
+
+        :returns The next item in the sequence i.e. the next event code
+        :rtype: int
+        """
         return self.next_event()
 
 def cyPAPI_query_event(event_code: int) -> int:
+    """Query if a cyPAPI event code exists.
+
+    :param event_code: A defined event such as PAPI_TOT_INS
+    :type event_code: int
+    :returns: 0 if the event CAN be counted and a negative number if the event CANNOT be counted
+    :rtype: int
+    """
     cdef int retval
     cdef int evt_code = np.array(event_code).astype(np.intc)
     retval = PAPI_query_event(evt_code)
@@ -350,6 +437,13 @@ def cyPAPI_query_event(event_code: int) -> int:
     return retval
 
 def cyPAPI_query_named_event(event_name: str) -> int:
+    """Query if a named cyPAPI event exists.
+
+    :param event_name: A defined event name such as PAPI_TOT_INS
+    :type event_name: str
+    :returns: 0 if the event CAN be counted and a negative number if the event CANNOT be counted
+    :rtype: int
+    """
     cdef int retval
     cdef bytes evt_name = event_name.encode('utf8')
     retval = PAPI_query_named_event(evt_name)
@@ -357,12 +451,26 @@ def cyPAPI_query_named_event(event_name: str) -> int:
     return retval
 
 def cyPAPI_num_cmp_hwctrs(cidx: int) -> int:
+    """Get the number of hardware counters for the specified component.
+
+    :param cidx: An integer identifier for a component
+    :type cidx: int
+    :returns: The number of hardware counters for the specified component
+    :rtype: int 
+    """
     cdef int retval = PAPI_num_cmp_hwctrs(cidx)
     if retval < 0:
         raise _exceptions_for_cypapi[retval]
     return retval
 
 def cyPAPI_event_code_to_name(event_code: int) -> str:
+    """Convert a numeric hardware event code to a name.
+
+    :param event_code: A numeric hardware event code
+    :type event_code: int
+    :returns: The event name that corresponds to the provided event code
+    :rtype: str
+    """
     # convert Python integer to Numpy value, which follows C overflow logic
     cdef int retval, evt_code = np.array(event_code).astype(np.intc)
     cdef char out[1024]
@@ -373,6 +481,13 @@ def cyPAPI_event_code_to_name(event_code: int) -> str:
     return event_name
 
 def cyPAPI_event_name_to_code(event_name: str) -> int:
+    """Convert an event name to a numeric hardware event code.
+
+    :param event_name: A preset or native event name
+    :type event_name: str
+    :returns: The event code that corresponds to the provided event name
+    :rtype: int
+    """
     cdef bytes c_name = event_name.encode('utf-8')
     cdef int out = -1
     cdef int retval = PAPI_event_name_to_code(c_name, &out)
@@ -383,13 +498,18 @@ def cyPAPI_event_name_to_code(event_name: str) -> int:
 cdef object _user_thread_defined_callback = None
 cdef unsigned long _convert_user_defined_callback() noexcept:
     """Internal function to convert Python callable to C callable
-    for cyPAPI_thread_init."""
+    for cyPAPI_thread_init.
+
+    :returns: A callback function that returns the current thread id
+    :rtype: Callable
+    """
     return _user_thread_defined_callback()
 
 def cyPAPI_thread_init(thread_defined_callback: Callable) -> None:
     """Initialize thread support in cyPAPI.
 
-    :param thread_id_callback: A callback function that returns the current thread id.
+    :param thread_id_callback: A callback function that returns the current thread id
+    :type thread_id_callback: Callable
     """
     global _user_thread_defined_callback
     if _user_thread_defined_callback is not None:
@@ -416,7 +536,7 @@ def cyPAPI_unregister_thread() -> None:
 def cyPAPI_thread_id() -> str:
     """Get the thread identifier of the current thread.
 
-    :returns: Current thread id as hex.
+    :returns: Current thread id as a hexadecimal.
     :rtype: str
     """
     cdef unsigned long retval = PAPI_thread_id();
@@ -430,7 +550,7 @@ def cyPAPI_list_threads() -> tuple(int, list[str]):
     """Get the total number of thread ids and a list of the registered thread ids.
 
     :returns: A tuple with the total number of thread ids in index 0
-              and the list of thread ids in index 1.
+              and the list of thread ids in index 1
     :rtype: tuple
     """
     cdef int number_of_threads
@@ -460,82 +580,83 @@ class CypapiGetComponentInfo:
 
     Arguments
     _________
-    init_cmp_code : int
-        Software component index, required for instantiation.
+    :param init_cmp_cidx: Software component index to get infromation for
+    :type init_cmp_cidx: int
 
-        Attributes
+    Attributes
     __________
-    name : str
-        Name of software component.
-    short_name : str
-        Short name of software component.
-    description : str
-        Description of software component.
-    version : str
-        Version of software component.
-    support_version : str
-        Version of support library.
-    kernel_version : str
-        Version of kernel PMC support driver.
-    disabled_reason : str
-        Reason for failure of initialization.
-    disabled : int
-        0 if enabled, otherwise error code from initialization.
-    initialized : int
-        Software component is ready to use.
-    CmpIdx : int
-        Index into the vector array for this software component; set at init.
-    num_cntrs : int
-        Number of hardware counters the software component supports.
-    num_mpx_cntrs : int
-        Number of hardware counters the component or PAPI can multiplex.
-    num_preset_events : int
-        Number of preset events the component supports.
-    num_native_events : int
-        Number of native events the component supports.
-    default_domain : int
-        Default domain when this software component is used.
-    available_domains : int
-        Available domains.
-    default_granularity : int
-        Default granularity when this software component is used.
-    available_granularities : int
-        Available granularities.
-    hardware_intr_sig : int
-        Signal used by hardware to deliver PMC events.
-    component_type : int
-        Type of software component.
-    pmu_names : list
-        List of pmu names supported by this software component.
-    reserved : int
-    hardware_intr : int
-        HW overflow instructions.
-    precise_intr : int
-        Performance interrupts happen precisely.
-    posix1b_timers : int
-        Using POSIX 1b internal timers instead of setitimer.
-    kernel_profile : int
-        Has kernel profiling support (buffered interrupts or sprofil-like).
-    kernel_multiplex : int
-        In kernel multiplexing.
-    fast_counter_read : int
-        Supports a user level PMC read instruction.
-    fast_real_timer : int
-        Supports a fast real timer.
-    fast_virtual_timer : int
-        Supports a fast virtual timer.
-    attach : int
-        Supports attach.
-    attach_must_ptrace : int
-        Attach must first ptrace and stop the thread/process.
-    cntr_umasks : int
-        Counters have unit masks.
-    cpu : int
-        Supports specifying cpu number to use with event set.
-    inherit : int
-        Supports child processes inheriting parents counters.
-    reserved_bits : int
-        Reserved bits.
+    :param name: Name of the software component
+    :type name: str
+    :param short_name: Short name of the software component
+    :type short_name: str
+    :param description: Description of the software component
+    :type description: str
+    :param version: Version of the software component
+    :type version: str
+    :param support_version: Version of the support library
+    :type support_version: str
+    :param kernel_version: Version of the kernel PMC support driver
+    :type kernel_version: str
+    :param disabled_reason: Reason for failure of initialization
+    :type disabled_reason: str
+    :param disabled: 0 if enabled, otherwise error code from initialization
+    :type disabled: int
+    :param initialized: Software component is ready to use
+    :type initialized: int
+    :param CmpIdx: Index into the vector array for this software component; set at init
+    :type CmpIdx: int
+    :param num_cntrs: Number of hardware counters the software component supports
+    :type num_cntrs: int
+    :param num_mpx_cntrs: Number of hardware counters the component or cyPAPI can multiplex
+    :type num_mpx_cntrs: int
+    :param num_preset_events: Number of preset events the component supports
+    :type num_preset_events: int
+    :param num_native_events: Number of native events the component supports
+    :type num_native_events: int
+    :param default_domain: Default domain when this software component is used
+    :type default_domain: int
+    :param available_domains: Available domains
+    :type available_domains: int
+    :param default_granularity: Default granularity when this software component is used
+    :type default_granularity: int
+    :param available_granularities: Available granularities
+    :type available_granularities: int
+    :param hardware_intr_sig: Signal used by the hardware to deliver PMC events
+    :type hardware_intr_sig: int
+    :param component_type: Type of software component
+    :type component_type: int
+    :param pmu_names: List of pmu names supported by this software component
+    :type pmu_names: list
+    :param reserved:
+    :type reserved: int
+    :param hardware_intr: HW overflow instructions
+    :type hardware_intr: int
+    :param precise_intr: Performance interrupts happen precisely
+    :type precise_intr: int
+    :param posix1b_timers: Using POSIX 1b internal timers instead of setittimer
+    :type posix1b_timers: int
+    :param kernel_profile: Has kernel profiling support (buffered interrupts or sprofil-like)
+    :type kernel_profile: int
+    :param kernel_multiplex: In kernel multiplexing
+    :type kernel_multiplex: int
+    :param fast_counter_read: Supports a user level PMC read instruction
+    :type fast_counter_read: int
+    :param fast_real_timer: Supports a fast real timer
+    :type fast_real_timer: int
+    :param fast_virtual_timer: Supports a fast virtual timer
+    :type fast_virtual_timer: int
+    :param attach: Supports attach
+    :type attach: int
+    :param attach_must_ptrace: Attach must first ptrace and stop the thread/process
+    :type attach_must_ptrace: int
+    :param cntr_umasks: Counters have unit masks
+    :type cntr_umasks: int
+    :param cpu: Supports specifying the cpu number to use with the EventSet
+    :type cpu: int
+    :param inherit: Supports child processes inheriting parents counters
+    :type inherit: int
+    :param reserved_bits: Reserved bits
+    :type reserved_bits: int
     """
     # required during instantiation
     init_cmp_cidx: InitVar[int]
@@ -579,7 +700,11 @@ class CypapiGetComponentInfo:
 
     # process PAPI_component_info_t structure
     def __post_init__(self, init_cmp_cidx: int) -> None:
-        """Initialize attributes depending on PAPI_get_component_info call."""
+        """Initialize attributes depending on PAPI_get_component_info call.
+
+        :param init_cmp_cidx: Software component index to get infromation for
+        :type init_cmp_cidx: int
+        """
         valid_pmu_names = []
         cdef const PAPI_component_info_t *cmp_info = NULL
         cmp_info = PAPI_get_component_info(init_cmp_cidx)
@@ -637,49 +762,49 @@ class CypapiGetEventInfo:
 
     Arguments
     _________
-    init_evt_code : int
-        Event code, required for instantiation.
+    :param init_evt_code: Event code you want to collect descriptive strings and values for
+    :type init_evt_code: int
 
     Attributes
     __________
-    event_code : int
-        Event code, either preset or native.
-    symbol : str
-        Name of the event.
-    short_descr : str
-        A short description suitable for use as a label.
-    long_descr : str
-        A longer description typically a sentence or a paragraph.
-    comonent_index : int
-        Component this event belongs to.
-    units : str
-        Units event is measured in.
-    location : int
-        Location event applies to.
-    data_type : int
-        Data type returned by PAPI.
-    value_type : int
-        Sum or absolute.
-    timescope : int
-        From start, etc.
-    update_type : int
-        How event is updated.
-    update_freq : int
-        How frequently event is updated.
-    count : int
-        Number of terms in the code and name fields.
-    event_type : int
-        Event type or category for preset events only.
-    derived : str
-        Name of the derived type.
-    postfix : str
-        String containing postfix operations.
-    code : list
-        Array of values that further describe the event.
-    name : list
-        Names of code terms.
-    note : str
-        Optional developer note.
+    :param event_code: Event code, either preset or native
+    :type event_code: int
+    :param symbol: Name of the event
+    :type symbol: str
+    :param short_descr: A short description suitable for use as a label
+    :type short_descr: str
+    :param long_descr: A longer description typically a sentence or a paragraph
+    :type long_descr: str
+    :param component_index: Component this event belongs to
+    :type component_index: int
+    :param units: Units event is measured in
+    :type units: str
+    :param location: Location event applies to
+    :type location: int
+    :param data_type: Data type returned by cyPAPI
+    :type data_type: int
+    :param value_type: Sum or absolute
+    :type value_type: int
+    :param timescope: From start, etc.
+    :type timescope: int
+    :param update_type: How event is updated
+    :type update_type: int
+    :param update_freq: How frequently event is updated
+    :type update_freq: int
+    :param count: Number of terms in the code and name fields
+    :type count: int
+    :param event_type: Event type or category for preset events only
+    :type event_type: int
+    :param derived: Name of the derived type
+    :type derived: str
+    :param postfix: String containing postfix operations
+    :type postfix: str
+    :param code: Array of values that further describe the event
+    :type code: list
+    :param name: Name of code terms
+    :type name: list
+    :param note: Optional developer note
+    :type note: str
     """
     # required during instantiation
     init_evt_code: InitVar[int]
@@ -706,7 +831,11 @@ class CypapiGetEventInfo:
 
     # process PAPI_event_info_t structure
     def __post_init__(self, init_evt_code: int) -> None:
-        """Initialize attributes depending on PAPI_get_event_info call."""
+        """Initialize attributes depending on PAPI_get_event_info call.
+
+        :param init_evt_code: Event code, either preset or native
+        :type init_evt_code: int
+        """
         cdef PAPI_event_info_t info
         cdef int retval, evt_code = np.array(init_evt_code).astype(np.intc)
 
@@ -740,41 +869,66 @@ cdef class CypapiCreateEventset:
     cdef int event_set
 
     def __cinit__(self) -> None:
+        """Initialize a CypapiCreateEventSet object."""
         self.event_set = PAPI_NULL
         cdef int retval = PAPI_create_eventset(&self.event_set)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
     def __str__(self) -> str:
-        return f'{self.event_set}'
+        """Return the string representation of the class.
+
+        :returns: The corresponding EventSet integer
+        :rtype: str
+        """
+        return f"{self.event_set}"
 
     def cleanup_eventset(self) -> None:
+        """Remove all events from an eventset and turn off profiling for all events in the EventSet."""
         cdef int retval = PAPI_cleanup_eventset(self.event_set)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
     def destroy_eventset(self) -> None:
+        """Deallocate the memory associated with an empty EventSet."""
         cdef int retval = PAPI_destroy_eventset(&self.event_set)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
     def num_events(self) -> int:
+        """Get the number of events contained in an EventSet.
+
+        :returns: Total number of events contained in the EventSet
+        :rtype: int
+        """
         cdef int retval = PAPI_num_events(self.event_set)
         if retval < 0:
             raise _exceptions_for_cypapi[retval]
         return retval
 
     def assign_eventset_component(self, cidx: int) -> None:
+        """Assign a component index to an existing but empty EventSet.
+        By convention the cpu component is always 0.
+
+        :param cidx: The integer index for the component you wish to assign to an empty EventSet
+        :type: int
+        """
         cdef int retval = PAPI_assign_eventset_component(self.event_set, cidx)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
     def reset(self) -> None:
+        """Reset the hardwared event counts in an EventSet."""
         cdef int retval = PAPI_reset(self.event_set)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
     def add_event(self, event_code: int) -> None:
+        """Add a preset or native hardware event to an EventSet by code.
+
+        :param event_code: A preset or native hardware event code
+        :type event_code: int
+        """
         # convert Python integer to Numpy value, which follows C overflow logic
         cdef int retval, evt_code = np.array(event_code).astype(np.intc)
         retval = PAPI_add_event(self.event_set, evt_code)
@@ -782,29 +936,50 @@ cdef class CypapiCreateEventset:
             raise _exceptions_for_cypapi[retval]
 
     def add_named_event(self, event_name: str) -> None:
+        """Add a preset or native hardware event to an EventSet by name.
+
+        :param event_name: A preset or native hardware event name
+        :type event_name: str
+        """
         cdef bytes c_name = event_name.encode('utf-8')
         cdef int retval = PAPI_add_named_event(self.event_set, c_name)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
     def remove_event(self, event_code: int) -> None:
+        """Remove a preset or native hardware event from an EventSet by code.
+
+        :param event_code: A preset or native hardware event code
+        :type event_code: int 
+        """
         cdef int evt_code = np.array(event_code).astype(np.intc)
         cdef int retval = PAPI_remove_event(self.event_set, evt_code)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
     def remove_named_event(self, event_name: str) -> None:
+        """Remove a preset or native hardware event from an EventSet by name.
+
+        :param event_name: A preset or native hardware event name
+        :type event_name: str
+        """
         cdef bytes c_string_event_name = event_name.encode('utf-8')
         cdef int retval = PAPI_remove_named_event(self.event_set, c_string_event_name)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
     def start(self) -> None:
+        """Start counting the hardware events in the EventSet."""
         cdef int retval = PAPI_start(self.event_set)
         if retval != PAPI_OK:
             raise _exceptions_for_cypapi[retval]
 
     def stop(self) -> list[int]:
+        """Stop counting the hardware events in the EventSet.
+
+        :returns: A list of counter value(s) for the hardware event(s) in the EventSet
+        :rtype: list
+        """
         cdef int retval
          # memory allocation for array to be passed to PAPI function
         cdef long long *counter_vals = <long long *> PyMem_Malloc(
@@ -826,6 +1001,11 @@ cdef class CypapiCreateEventset:
             PyMem_Free(counter_vals)
 
     def read(self) -> list[int]:
+        """Read hardware counters from the EventSet.
+
+        :returns: A list of counter value(s) for the hardware event(s) in the EventSet
+        :rtype: list
+        """
         cdef int retval
         # memory allocation for array to be passed to PAPI function
         cdef long long *counter_vals = <long long *> PyMem_Malloc(
@@ -847,6 +1027,11 @@ cdef class CypapiCreateEventset:
             PyMem_Free(counter_vals)
 
     def read_ts(self) -> tuple[list[int], int]:
+        """Read hardware counters from the EventSet with a time stamp.
+        
+        :returns: A tuple which contains a list of counter value(s) and a time stamp
+        :rtype: tuple
+        """
         cdef int retval
         cdef long long cycles = -1
         # memory allocation for array to be passed to PAPI function
@@ -870,6 +1055,13 @@ cdef class CypapiCreateEventset:
             PyMem_Free(counter_vals)
 
     def accum(self, values: list[int]) -> list[int]:
+        """Accumulate and reset counters in the EventSet.
+
+        :param values: A list of counter value(s) for the counting events
+        :type values: list
+        :returns: A list of counter value(s) for the hardware event(s) in the EventSet
+        :rtype: list
+        """
         cdef int retval
         # the list values must be initialized for accum
         if self.num_events() != len(values):
@@ -897,6 +1089,13 @@ cdef class CypapiCreateEventset:
             PyMem_Free(counter_vals)
 
     def list_events(self, probe: bool = False) -> Union[list[int], int]:
+        """List the events in the EventSet.
+
+        :param probe: Set equal to True to output the total number of events in the EventSet
+        :type probe: bool
+        :returns: A list of events in the event set or the total number of events in the EventSet
+        :rtype: Union[list[int], str]
+        """
         cdef int *evts
         cdef int retval, num_events = self.num_events()
         # does not probe EventSet
@@ -920,6 +1119,11 @@ cdef class CypapiCreateEventset:
             return num_events
 
     def state(self) -> int:
+        """Get the counting state of the EventSet.
+
+        :returns: A numerical value which represents the counting state of an EventSet
+        :rtype: int
+        """
         cdef int val = -1
         cdef int retval = PAPI_state(self.event_set, &val)
         if retval != PAPI_OK:
@@ -927,6 +1131,11 @@ cdef class CypapiCreateEventset:
         return val
 
     def write(self, values: list[int]) -> None:
+        """Write counter values into counters.
+
+        :params values: A list of counter values to write into the EventSet
+        :type values: list
+        """
         cdef int retval
         cdef int num_events = self.num_events()
         if len(values) > num_events:
@@ -944,6 +1153,11 @@ cdef class CypapiCreateEventset:
             raise _exceptions_for_cypapi[retval]
 
     def get_eventset_component(self) -> int:
+        """Get the component index an EventSet is assigned to.
+
+        :returns: The index of the component the EventSet is assigned to.
+        :rtype: int
+        """
         cdef int retval = PAPI_get_eventset_component(self.event_set)
         if retval < 0:
             raise _exceptions_for_cypapi[retval]
